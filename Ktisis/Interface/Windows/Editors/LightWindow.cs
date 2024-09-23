@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -126,6 +127,62 @@ public class LightWindow : EntityEditWindow<LightEntity> {
 		ImGui.DragFloat("Intensity", ref light->Color.Intensity, 0.01f, 0.0f, 100.0f);
 		if (ImGui.DragFloat("Range##LightRange", ref light->Range, 0.1f, 0, 999))
 			entity.Flags |= LightEntityFlags.Update;
+
+
+		// cfsen: Presets for light color
+
+		ImGui.Spacing();
+
+		var color_templates = new Dictionary<string, Vector3>();
+		color_templates.Add("Off", new Vector3(0.0f, 0.0f, 0.0f));
+		color_templates.Add("Direct Sunlight", new Vector3(255 / 255.0f, 255 / 255.0f, 255 / 255.0f));
+		color_templates.Add("High Noon Sun", new Vector3(255 / 255.0f, 255 / 255.0f, 251 / 255.0f));
+		color_templates.Add("Overcast Sky", new Vector3(201 / 255.0f, 226 / 255.0f, 255 / 255.0f));
+		color_templates.Add("Clear Blue Sky", new Vector3(64 / 255.0f, 156 / 255.0f, 255 / 255.0f));
+		color_templates.Add("LB0", new Vector3(0.0f, 0.0f, 0.0f));
+		color_templates.Add("Warm Fluorescent", new Vector3(255 / 255.0f, 244 / 255.0f, 229 / 255.0f));
+		color_templates.Add("Full Spectrum Fluorescent", new Vector3(255 / 255.0f, 244 / 255.0f, 242 / 255.0f));
+		color_templates.Add("Grow Light Fluorescent", new Vector3(255 / 255.0f, 239 / 255.0f, 247 / 255.0f));
+		color_templates.Add("Standard Fluorescent", new Vector3(244 / 255.0f, 255 / 255.0f, 250 / 255.0f));
+		color_templates.Add("Cool White Fluorescent", new Vector3(212 / 255.0f, 235 / 255.0f, 255 / 255.0f));
+		color_templates.Add("Black Light Fluorescent", new Vector3(167 / 255.0f, 0 / 255.0f, 255 / 255.0f));
+		color_templates.Add("LB1", new Vector3(0.0f, 0.0f, 0.0f));
+		color_templates.Add("High Pressure Sodium", new Vector3(255 / 255.0f, 183 / 255.0f, 76 / 255.0f));
+		color_templates.Add("Sodium Vapor", new Vector3(255 / 255.0f, 209 / 255.0f, 178 / 255.0f));
+		color_templates.Add("Metal Halide", new Vector3(242 / 255.0f, 252 / 255.0f, 255 / 255.0f));
+		color_templates.Add("Mercury Vapor", new Vector3(216 / 255.0f, 247 / 255.0f, 255 / 255.0f));
+		color_templates.Add("LB2", new Vector3(0.0f, 0.0f, 0.0f));
+		color_templates.Add("Candle", new Vector3(255 / 255.0f, 147 / 255.0f, 41 / 255.0f));
+		color_templates.Add("40W Tungsten", new Vector3(255 / 255.0f, 197 / 255.0f, 143 / 255.0f));
+		color_templates.Add("100W Tungsten", new Vector3(255 / 255.0f, 214 / 255.0f, 170 / 255.0f));
+		color_templates.Add("Halogen", new Vector3(255 / 255.0f, 241 / 255.0f, 224 / 255.0f));
+		color_templates.Add("Carbon Arc", new Vector3(255 / 255.0f, 250 / 255.0f, 244 / 255.0f));
+		color_templates.Add("LB3", new Vector3(0.0f, 0.0f, 0.0f));
+		color_templates.Add("5500K", new Vector3(248 / 255.0f, 255 / 255.0f, 183 / 255.0f));
+		color_templates.Add("5100K", new Vector3(255 / 255.0f, 248 / 255.0f, 167 / 255.0f));
+		color_templates.Add("4700K", new Vector3(255 / 255.0f, 234 / 255.0f, 144 / 255.0f));
+		color_templates.Add("4300K", new Vector3(255 / 255.0f, 218 / 255.0f, 122 / 255.0f));
+		color_templates.Add("3900K", new Vector3(255 / 255.0f, 201 / 255.0f, 100 / 255.0f));
+		color_templates.Add("3500K", new Vector3(255 / 255.0f, 182 / 255.0f, 78 / 255.0f));
+		color_templates.Add("3100K", new Vector3(255 / 255.0f, 162 / 255.0f, 57 / 255.0f));
+		color_templates.Add("2700K", new Vector3(255 / 255.0f, 139 / 255.0f, 39 / 255.0f));
+		color_templates.Add("2300K", new Vector3(255 / 255.0f, 115 / 255.0f, 23 / 255.0f));
+		color_templates.Add("1900K", new Vector3(255 / 255.0f, 89 / 255.0f, 11 / 255.0f));
+		color_templates.Add("1500K", new Vector3(255 / 255.0f, 61 / 255.0f, 4 / 255.0f));
+
+		foreach (var template in color_templates)
+		{
+			if (template.Key == "LB0" || template.Key == "LB1" || template.Key == "LB2" || template.Key == "LB3")
+			{
+				ImGui.Spacing();
+				continue;
+			}
+			if (ImGui.ColorButton(template.Key, new Vector4(template.Value.X, template.Value.Y, template.Value.Z, 16.0f)))
+			{
+				light->Color.RGB = template.Value;
+			}
+			ImGui.SameLine();
+		}
 	}
 	
 	// Shadows tab
