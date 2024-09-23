@@ -278,7 +278,7 @@ public class LazyLightsComponents {
 	}
 	#endregion
 
-	#region Utilities
+	#region Ktisis/math/etc utilities
 	private ActorEntity? ResolveActorEntity() {
 		// Resolves the parent actor entity of any bone. Recursion warning.
 		var selected = this._ctx.Selection.GetSelected().FirstOrDefault();
@@ -317,6 +317,10 @@ public class LazyLightsComponents {
 	}
 	private float DegToRad(float deg) {
 		return (float)(deg * Math.PI / 180);
+	}
+
+	public Vector3 RGBToVector(int r, int g, int b) {
+		return new Vector3(r / 255.0f, g / 255.0f, b / 255.0f);
 	}
 	#endregion
 }
