@@ -63,13 +63,14 @@ public class WorkspaceWindow : KtisisWindow {
 		this._cameras.Draw();
 		this._workspace.Draw();
 
-		var botHeight = UiBuilder.IconFont.FontSize + (style.ItemSpacing.Y + style.ItemInnerSpacing.Y) * 2;
+		//var botHeight = UiBuilder.IconFont.FontSize + (style.ItemSpacing.Y + style.ItemInnerSpacing.Y) * 2;
+		var botHeight = (style.ItemSpacing.Y + style.ItemInnerSpacing.Y) * 2;
 		var treeHeight = ImGui.GetContentRegionAvail().Y - botHeight;
 		this._sceneTree.Draw(treeHeight);
 
 		ImGui.Spacing();
 		
-		this.DrawSceneTreeButtons();
+		//this.DrawSceneTreeButtons();
 	}
 	
 	// Context buttons
@@ -96,6 +97,11 @@ public class WorkspaceWindow : KtisisWindow {
 			this.Interface.OpenPosingWindow();
 
 		ImGui.SameLine(0, spacing);
+
+		if (Buttons.IconButton(FontAwesomeIcon.Plus))
+			this.Interface.OpenSceneCreateMenu();
+
+		ImGui.SameLine(0, spacing);
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - Buttons.CalcSize() * 2 - spacing);
 		
 		using (var _ = ImRaii.Disabled(!this._ctx.Actions.History.CanUndo))
@@ -107,6 +113,7 @@ public class WorkspaceWindow : KtisisWindow {
 		using (var _ = ImRaii.Disabled(!this._ctx.Actions.History.CanRedo))
 			if (Buttons.IconButtonTooltip(FontAwesomeIcon.StepForward, this._ctx.Locale.Translate("actions.History_Redo")))
 				this._ctx.Actions.History.Redo();
+
 	}
 	
 	// Scene tree buttons
