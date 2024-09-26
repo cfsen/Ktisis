@@ -75,8 +75,12 @@ public class SceneEntityMenuBuilder {
 	// Actors
 
 	private void BuildActorMenu(ContextMenuBuilder menu, ActorEntity actor) {
+		// cfsen: Moved import/export to root level of menu.
 		menu.Separator()
 			.Action("Target", actor.Actor.SetGPoseTarget)
+			.Separator()
+			.Action("Import pose", () => this.Ui.OpenPoseImport(actor))
+			.Action("Export pose", () => this.ExportPose(actor.Pose))
 			.Separator()
 			.Group(sub => this.BuildActorIpcMenu(sub, actor))
 			.Action("Edit appearance", this.OpenEditor)
