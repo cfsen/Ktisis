@@ -11,7 +11,6 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 
 using Ktisis.Actions.Types;
 using Ktisis.Common.Extensions;
-using Ktisis.Common.Utility;
 using Ktisis.Data.Files;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Posing.Attachment;
@@ -21,7 +20,6 @@ using Ktisis.Editor.Posing.Ik;
 using Ktisis.Editor.Posing.Types;
 using Ktisis.Interop.Hooking;
 using Ktisis.Scene.Entities.Skeleton;
-using Ktisis.Structs.Characters;
 
 namespace Ktisis.Editor.Posing;
 
@@ -77,12 +75,19 @@ public class PosingManager : IPosingManager {
 
 	private unsafe void Subscribe() {
 		this.PoseModule!.OnSkeletonInit += this.OnSkeletonInit;
+		this.PoseModule!.OnDisconnect += this.OnDisconnect;
 		this._context.Characters.OnDisableDraw += this.OnDisableDraw;
 		this._context.Plugin.Config.OnSaved += this.AutoSave.Configure;
 	}
 
 	private unsafe void OnSkeletonInit(IGameObject gameObject, Skeleton* skeleton, ushort partialId) {
 		this.RestorePoseFor(gameObject.ObjectIndex, skeleton, partialId);
+	}
+
+	private void OnDisconnect() {
+		if (!this._context.Config.AutoSave.OnDisconnect) return;
+		Ktisis.Log.Verbose("Disconnected, triggering pose save.");
+		this.AutoSave.Save();
 	}
 
 	private unsafe void OnDisableDraw(IGameObject gameObject, DrawObject* drawObject) {
@@ -111,7 +116,6 @@ public class PosingManager : IPosingManager {
 	private readonly Dictionary<ushort, PoseState> _savedPoses = new();
 
 	private unsafe void PreservePoseFor(ushort objectIndex, Skeleton* skeleton) {
-		var trans = skeleton->Owner != null ? ((CharacterBaseEx*)skeleton->Owner)->Transform : skeleton->Transform;
 		var pose = new PoseContainer();
 		pose.Store(skeleton);
 		this._savedPoses[objectIndex] = new PoseState {
@@ -137,6 +141,7 @@ public class PosingManager : IPosingManager {
 			converter.LoadReferencePose();
 			var final = converter.Save();
 			this._context.Actions.History.Add(new PoseMemento(converter) {
+				Modes = PoseMode.All,
 				Transforms = PoseTransforms.Position | PoseTransforms.Rotation,
 				Bones = null,
 				Initial = initial,
@@ -148,6 +153,7 @@ public class PosingManager : IPosingManager {
 	public Task ApplyPoseFile(
 		EntityPose pose,
 		PoseFile file,
+		PoseMode modes = PoseMode.All,
 		PoseTransforms transforms = PoseTransforms.Rotation,
 		bool selectedBones = false,
 		bool anchorGroups = false
@@ -163,9 +169,10 @@ public class PosingManager : IPosingManager {
 			if (selectedBones)
 				converter.LoadSelectedBones(file.Bones, transforms);
 			else
-				converter.Load(file.Bones, transforms);
+				converter.Load(file.Bones, modes, transforms);
 
 			mementos.Add(new PoseMemento(converter) {
+				Modes = modes,
 				Transforms = transforms,
 				Bones = selectedBones ? converter.GetSelectedBones().ToList() : null,
 				Initial = selectedBones ? converter.FilterSelectedBones(initial) : initial,
@@ -173,12 +180,13 @@ public class PosingManager : IPosingManager {
 			});
 
 			if (selectedBones && anchorGroups && transforms.HasFlag(PoseTransforms.Position)) {
-				var restored = converter.GetSelectedBones(false);
+				var restored = converter.GetSelectedBones(false).ToList();
 				converter.LoadBones(initial, restored, PoseTransforms.Position);
 
 				mementos.Add(new PoseMemento(converter) {
+					Modes = modes,
 					Transforms = PoseTransforms.Position,
-					Bones = restored.ToList(),
+					Bones = restored,
 					Initial = converter.FilterSelectedBones(file.Bones, false),
 					Final = converter.FilterSelectedBones(initial, false)
 				});
