@@ -183,6 +183,27 @@ public class PosingManager : IPosingManager {
 				var restored = converter.GetSelectedBones(false).ToList();
 				converter.LoadBones(initial, restored, PoseTransforms.Position);
 
+				if(restored.Count == 1 && restored[0].Name == "j_kubi") {
+					// Build temporary obj and lookup BoneIndex for face-bone (j_kao)
+					PartialBoneInfo facePartial = new() {
+						Name = "j_kao"
+					};
+					int i = 0;
+					foreach(var bone in initial) {
+						if(bone.Key == facePartial.Name) {
+							facePartial.BoneIndex = i;
+							break;
+						} 
+						i++;
+					}
+
+					facePartial.PartialIndex = 0; // Unsure if this breaks anything. Seems to work.
+					facePartial.ParentIndex = restored[0].BoneIndex;
+
+					restored.Add(facePartial);
+				}
+				converter.LoadBones(initial, restored, PoseTransforms.Rotation);
+
 				mementos.Add(new PoseMemento(converter) {
 					Modes = modes,
 					Transforms = PoseTransforms.Position,
