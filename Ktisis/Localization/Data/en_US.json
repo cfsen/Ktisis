@@ -8,7 +8,7 @@
 			null
 		]
 	},
-	
+
 	"actions": {
 		"Select_None": "Cancel selection",
 		"Overlay_Toggle": "Toggle overlay visibility",
@@ -22,7 +22,8 @@
 		"Gizmo_SetUniversalMode": "Switch to universal mode",
 		"Camera_SetNext": "Switch to next camera",
 		"Camera_SetPrevious": "Switch to previous camera",
-		"Camera_Work_Toggle": "Toggle work camera"
+		"Camera_Work_Toggle": "Toggle work camera",
+		"Gizmo_ToggleMirrorParallelMode": "Toggle Mirror/parallel transform"
 	},
 	
 	"actors": {
