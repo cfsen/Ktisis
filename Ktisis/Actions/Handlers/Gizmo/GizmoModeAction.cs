@@ -27,3 +27,22 @@ public class GizmoModeAction(IPluginContext ctx) : KeyAction(ctx) {
 		return true;
 	}
 }
+
+[Action("Gizmo_ToggleMirrorParallelMode")]
+public class GizmoModeMirrorParallelAction(IPluginContext ctx) : KeyAction(ctx) {
+	public override KeybindInfo BindInfo { get; } = new() {
+		Trigger = KeybindTrigger.OnDown,
+		Default = new ActionKeybind {
+			Enabled = true,
+			Combo = new KeyCombo(VirtualKey.M, VirtualKey.CONTROL)
+		}
+	};
+
+	public override bool CanInvoke() => this.Context.Editor != null;
+
+	public override bool Invoke() {
+		if (!this.CanInvoke()) return false;
+		this.Context.Config.File.Gizmo.MirrorRotation ^= true;
+		return true;
+	}
+}
