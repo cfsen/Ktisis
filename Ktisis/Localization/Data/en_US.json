@@ -8,7 +8,7 @@
 			null
 		]
 	},
-	
+
 	"actions": {
 		"Select_None": "Cancel selection",
 		"Overlay_Toggle": "Toggle overlay visibility",
@@ -24,26 +24,26 @@
 		"Camera_SetPrevious": "Switch to previous camera",
 		"Camera_Work_Toggle": "Toggle work camera"
 	},
-	
+
 	"actors": {
 		"pos_lock": "Freeze positions"
 	},
-	
+
 	"common": {
 		"options": "Options"
 	},
-	
+
 	"context": {
 		"select": "Select",
 		"unselect": "Unselect"
 	},
-	
+
 	"transform": {
 		"position": "Position",
 		"rotation": "Rotation",
 		"scale": "Scale"
 	},
-	
+
 	"file": {
 		"import": "Import...",
 		"export": "Export...",
@@ -60,7 +60,7 @@
 			"ctx_export": "Export pose..."
 		}
 	},
-	
+
 	"workspace": {
 		"title": "Ktisis Workspace",
 		"state": {
@@ -85,7 +85,7 @@
 		"edit_mode.hint": "Select editing mode",
 		"overlay.toggle": "Toggle screen overlay"
 	},
-	
+
 	"transform_edit": {
 		"title": "Transform Editor",
 		"actors": {
@@ -126,12 +126,12 @@
 			}
 		}
 	},
-	
+
 	"chara_edit": {
 		"title": "Appearance Editor",
 		"hint": "Edit appearance"
 	},
-	
+
 	"camera_edit": {
 		"title": "Camera Editor",
 		"toggles": {
@@ -160,7 +160,7 @@
 		"pan": "Camera pan",
 		"angle": "Camera orbit angle"
 	},
-	
+
 	"env_edit": {
 		"title": "Environment Editor"
 	},
@@ -489,7 +489,58 @@
 		"j_f_dmiken_l": "Left Glabella",
 		"j_f_dmiken_r": "Right Glabella",
 
-		"j_ex_met_vb": "Visor"
+		"j_ex_met_vb": "Visor",
+
+
+		"iv_ko_c_l": "Pinky Left C",
+		"iv_ko_c_r": "Pinky Right C",
+		"iv_kusu_c_l": "Ring Left C",
+		"iv_kusu_c_r": "Ring Right C",
+		"iv_naka_c_l": "Middle Left C",
+		"iv_naka_c_r": "Middle Right C",
+		"iv_hito_c_l": "Index Left C",
+		"iv_hito_c_r": "Index Right C",
+		"iv_nitoukin_l": "Biceps Left",
+		"iv_nitoukin_r": "Biceps Right",
+		"iv_c_mune_l": "Breast B Left",
+		"iv_c_mune_r": "Breast B Right",
+		"iv_shiri_r": "Butt Right",
+		"iv_shiri_l": "Butt Left",
+		"iv_kougan_l": "Scrotum Left",
+		"iv_kougan_r": "Scrotum Right",
+		"iv_ochinko_a": "Penis A",
+		"iv_ochinko_b": "Penis B",
+		"iv_ochinko_c": "Penis C",
+		"iv_ochinko_d": "Penis D",
+		"iv_ochinko_e": "Penis E",
+		"iv_ochinko_f": "Penis F",
+		"iv_kurrito": "Clitoris",
+		"iv_inshin_l": "Labia Left",
+		"iv_inshin_r": "Labia Right",
+		"iv_omanko": "Vagina",
+		"iv_koumon": "Anus",
+		"iv_koumon_l": "Anus B Left",
+		"iv_koumon_r": "Anus B Right",
+
+		"iv_kyokin_phys_l": "Chest Physics Left",
+		"iv_kyokin_phys_r": "Chest Physics Right",
+		"iv_fukubu_phys": "Upper Belly Physics",
+		"iv_fukubu_phys_l": "Upper Belly Physics Left",
+		"iv_fukubu_phys_r": "Upper Belly Physics Right",
+		"iv_daitai_phys_l": "Back Thigh Physics Left",
+		"iv_daitai_phys_r": "Back Thigh Physics Right",
+		"iv_kintama_phys_l": "Scrotum Physics Left",
+		"iv_kintama_phys_r": "Scrotum Physics Right",
+		"iv_funyachin_phy_a": "Penis Physics A",
+		"iv_funyachin_phy_b": "Penis Physics B",
+		"iv_funyachin_phy_c": "Penis Physics C",
+		"iv_funyachin_phy_d": "Penis Physics D",
+
+		"ya_fukubu_phys": "Lower Belly",
+		"ya_daitai_phys_l": "Front Thigh Left",
+		"ya_daitai_phys_r": "Front Thigh Right",
+		"ya_shiri_phys_l": "Lower Butt Left",
+		"ya_shiri_phys_r": "Lower Butt Right"
 	},
 
 	"boneCategory": {
@@ -546,7 +597,10 @@
 		"PenisIvcs": "IVCS Penis",
 		"VaginaIvcs": "IVCS Vagina",
 		"BottomIvcs": "IVCS Bottom",
-		
+
+		"infrequentBones": "Special bones",
+		"yasPhysics": "Physics Bones",
+
 		"SkelomaeWings": "Skelomae Wings",
 		"SkelomaeWingsLeft": "Left Skelomae Wing",
 		"SkelomaeWingsRight": "Right Skelomae Wing",
@@ -559,14 +613,14 @@
 		"SkelomaeCreaturesCentaurBodyBackLegs": "Back Legs",
 		"SkelomaeCreaturesCentaurTail": "Tail"
 	},
-	
+
 	"lightType": {
 		"Directional": "Directional",
 		"PointLight": "Point Light",
 		"SpotLight": "Spot Light",
 		"AreaLight": "Area Light"
 	},
-	
+
 	"lightFalloff": {
 		"Linear": "Linear",
 		"Quadratic": "Quadratic",
