@@ -36,7 +36,7 @@ public class CameraSelector {
 
 		ImGui.SameLine(0, spacing);
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.PencilAlt, "Edit camera"))
-			this._ctx.Interface.OpenCameraWindow();
+			this._ctx.Interface.ToggleCameraWindow();
 		
 		ImGui.SameLine(0, spacing);
 		this.DrawFreecamToggle();

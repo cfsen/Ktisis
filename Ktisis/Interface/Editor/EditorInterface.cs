@@ -71,17 +71,24 @@ public class EditorInterface : IEditorInterface {
 	// Window wrappers
 
 	public void OpenConfigWindow() => this._gui.GetOrCreate<ConfigWindow>().Open();
+	public void ToggleConfigWindow() => this._gui.GetOrCreate<ConfigWindow>().Toggle();
 
 	public void ToggleWorkspaceWindow() => this._gui.GetOrCreate<WorkspaceWindow>(this._ctx).Toggle();
 	
 	// Editor windows
 	
 	public void OpenCameraWindow() => this._gui.GetOrCreate<CameraWindow>(this._ctx).Open();
+	public void ToggleCameraWindow() => this._gui.GetOrCreate<CameraWindow>(this._ctx).Toggle();
 	
 	public void OpenEnvironmentWindow() {
 		var scene = this._ctx.Scene;
 		var module = scene.GetModule<EnvModule>();
 		this._gui.GetOrCreate<EnvWindow>(scene, module).Open();
+	}
+	public void ToggleEnvironmentWindow() {
+		var scene = this._ctx.Scene;
+		var module = scene.GetModule<EnvModule>();
+		this._gui.GetOrCreate<EnvWindow>(scene, module).Toggle();
 	}
 
 	public void OpenObjectEditor() {
@@ -93,9 +100,15 @@ public class EditorInterface : IEditorInterface {
 		entity.Select(SelectMode.Force);
 		this.OpenObjectEditor();
 	}
+	public void ToggleTransformWindow() {
+		var gizmo = this._gizmo.Create(GizmoId.TransformEditor);
+		this._gui.GetOrCreate<TransformWindow>(this._ctx, new Gizmo2D(gizmo)).Toggle();
+	}
 
 	public void OpenPosingWindow() => this._gui.GetOrCreate<PosingWindow>(this._ctx, this._ctx.Locale).Open();
-	
+	public void TogglePosingWindow() => this._gui.GetOrCreate<PosingWindow>(this._ctx, this._ctx.Locale).Toggle();
+
+
 	// Context menus
 
 	public void OpenSceneCreateMenu() {

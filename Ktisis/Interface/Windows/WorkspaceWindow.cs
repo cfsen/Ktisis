@@ -78,22 +78,22 @@ public class WorkspaceWindow : KtisisWindow {
 		var spacing = ImGui.GetStyle().ItemInnerSpacing.X;
 		
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.ArrowsAlt, this._ctx.Locale.Translate("transform_edit.title")))
-			this.Interface.OpenObjectEditor();
+			this.Interface.ToggleTransformWindow();
 
 		ImGui.SameLine(0, spacing);
 		
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Sun, this._ctx.Locale.Translate("env_edit.title")))
-			this.Interface.OpenEnvironmentWindow();
-
-		ImGui.SameLine(0, spacing);
-		
-		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Portrait, this._ctx.Locale.Translate("pose_view.title")))
-			this.Interface.OpenPosingWindow();
+			this.Interface.ToggleEnvironmentWindow();
 
 		ImGui.SameLine(0, spacing);
 		
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Cog, this._ctx.Locale.Translate("config.title")))
-			this.Interface.OpenConfigWindow();
+			this.Interface.ToggleConfigWindow();
+
+		ImGui.SameLine(0, spacing);
+		
+		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Portrait, "Pose View"))
+			this.Interface.TogglePosingWindow();
 
 		ImGui.SameLine(0, spacing);
 

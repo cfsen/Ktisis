@@ -14,12 +14,17 @@ public interface IEditorInterface {
 	public void Prepare();
 	
 	public void OpenConfigWindow();
+	public void ToggleConfigWindow();
 	public void ToggleWorkspaceWindow();
 
 	public void OpenCameraWindow();
+	public void ToggleCameraWindow();
 	public void OpenEnvironmentWindow();
-	public void OpenObjectEditor();
+	public void ToggleEnvironmentWindow();
+	public void OpenTransformWindow();
+	public void ToggleTransformWindow();
 	public void OpenPosingWindow();
+	public void TogglePosingWindow();
 
 	public void OpenSceneCreateMenu();
 	public void OpenSceneEntityMenu(SceneEntity entity);
