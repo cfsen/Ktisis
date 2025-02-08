@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 
 using Ktisis.Data.Files;
+using Ktisis.Editor.Context.Types;
 using Ktisis.Interface.Types;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
@@ -51,4 +52,7 @@ public interface IEditorInterface {
 	
 	public void ExportCharaFile(CharaFile file);
 	public void ExportPoseFile(PoseFile file);
+
+	// Lazy extras
+	public void ToggleLazyLights();
 }
