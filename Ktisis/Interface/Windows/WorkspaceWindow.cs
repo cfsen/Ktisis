@@ -70,7 +70,7 @@ public class WorkspaceWindow : KtisisWindow {
 
 		//ImGui.Spacing();
 		
-		this.DrawSceneTreeButtons();
+		//this.DrawSceneTreeButtons();
 	}
 	
 	// Context buttons
@@ -105,6 +105,16 @@ public class WorkspaceWindow : KtisisWindow {
 
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Camera, "Lazy camera"))
 			this.Interface.ToggleLazyCamera();
+
+		ImGui.SameLine(0, spacing);
+
+		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Plus, "Add"))
+			this.Interface.OpenSceneCreateMenu();
+
+		ImGui.SameLine(0, spacing);
+
+		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Lightbulb, "Lazy lights"))
+			this.Interface.ToggleLazyLights();
 
 		ImGui.SameLine(0, spacing);
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - Buttons.CalcSize() * 2 - spacing);
