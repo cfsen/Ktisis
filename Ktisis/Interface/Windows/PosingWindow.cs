@@ -25,8 +25,8 @@ public class PosingWindow : KtisisWindow {
 	private readonly GPoseService _gpose;
 	private readonly PoseViewRenderer _render;
 
-	private PoseViewSchema? _schema;
-	private ViewEnum _view = ViewEnum.Body;
+	private PoseViewSchema? Schema;
+	private ViewEnum View = ViewEnum.Face;
 
 	private ActorEntity? _target;
 
