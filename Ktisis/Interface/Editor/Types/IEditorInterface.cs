@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 
 using Ktisis.Data.Files;
+using Ktisis.Editor.Context.Types;
 using Ktisis.Interface.Types;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
