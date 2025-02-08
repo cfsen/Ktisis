@@ -63,10 +63,11 @@ public class WorkspaceWindow : KtisisWindow {
 		this._workspace.Draw();
 
 		var botHeight = UiBuilder.IconFont.FontSize + (style.ItemSpacing.Y + style.ItemInnerSpacing.Y) * 2;
-		var treeHeight = ImGui.GetContentRegionAvail().Y - botHeight;
+		//var treeHeight = ImGui.GetContentRegionAvail().Y - botHeight;
+		var treeHeight = ImGui.GetContentRegionAvail().Y;
 		this._sceneTree.Draw(treeHeight);
 
-		ImGui.Spacing();
+		//ImGui.Spacing();
 		
 		this.DrawSceneTreeButtons();
 	}
@@ -93,6 +94,11 @@ public class WorkspaceWindow : KtisisWindow {
 		
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Cog, this._ctx.Locale.Translate("config.title")))
 			this.Interface.OpenConfigWindow();
+
+		ImGui.SameLine(0, spacing);
+
+		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Anchor, "Lazy pose"))
+			this.Interface.ToggleLazyPose();
 
 		ImGui.SameLine(0, spacing);
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - Buttons.CalcSize() * 2 - spacing);
