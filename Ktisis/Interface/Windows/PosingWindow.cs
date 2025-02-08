@@ -27,7 +27,7 @@ public class PosingWindow : KtisisWindow {
 	private readonly PoseViewRenderer _render;
 
 	private PoseViewSchema? Schema;
-	private ViewEnum View = ViewEnum.Body;
+	private ViewEnum View = ViewEnum.Face;
 
 	private enum ViewEnum {
 		Body,
