@@ -223,4 +223,5 @@ public class EditorInterface : IEditorInterface {
 		var gizmo = this._gizmo.Create(GizmoId.LazyGizmo);
 		this._gui.GetOrCreate<LazyPose>(this._ctx).Toggle();
 	}
+	public void ToggleLazyLights() => this._gui.GetOrCreate<LazyLight>(this._ctx).Toggle();
 }
