@@ -40,8 +40,8 @@ public class SceneEntityMenuBuilder {
 		else
 			menu.Action("Unselect", this._entity.Unselect);
 		
-		if (this._entity is IVisibility vis)
-			menu.Action("Toggle display", () => vis.Toggle());
+		//if (this._entity is IVisibility vis)
+			//menu.Action("Toggle display", () => vis.Toggle());
 	}
 
 	private void BuildEntityBaseBottom(ContextMenuBuilder menu) {
@@ -75,20 +75,16 @@ public class SceneEntityMenuBuilder {
 	// Actors
 
 	private void BuildActorMenu(ContextMenuBuilder menu, ActorEntity actor) {
-		menu.Separator()
-			.Action("Target", actor.Actor.SetGPoseTarget)
+		menu.Action("Target", actor.Actor.SetGPoseTarget)
+			.Separator()
+			.Action("Import pose", () => this.Ui.OpenPoseImport(actor))
+			.Action("Export pose", () => this.ExportPose(actor.Pose))
 			.Separator()
 			.Group(sub => this.BuildActorIpcMenu(sub, actor))
-			.Action("Edit appearance", this.OpenEditor)
 			.Separator()
-			.SubMenu("Import...", sub => {
-				sub.Action("Character (.chara)", () => this.Ui.OpenCharaImport(actor))
-					.Action("Pose file (.pose)", () => this.Ui.OpenPoseImport(actor));
-			})
-			.SubMenu("Export...", sub => {
-				sub.Action("Character (.chara)", () => this.Ui.OpenCharaExport(actor))
-					.Action("Pose file (.pose)", () => this.ExportPose(actor.Pose));
-			});
+			.Action("Edit appearance", this.OpenEditor)
+			.Action("Import character", () => this.Ui.OpenCharaImport(actor))
+			.Action("Export character", () => this.Ui.OpenCharaExport(actor));
 	}
 
 	private void BuildActorIpcMenu(ContextMenuBuilder menu, ActorEntity actor) {
