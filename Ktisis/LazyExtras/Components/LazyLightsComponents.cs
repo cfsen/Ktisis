@@ -1,4 +1,5 @@
 ﻿using Ktisis.Common.Utility;
+using Ktisis.Data.Files;
 using Ktisis.Data.Json;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Scene.Entities.Game;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Ktisis.LazyExtras.Components;
 
-public class LazyKtisisLight {
+public class LazyKtisisLight : JsonFile {
 	public string Name { get; set; } = "";
 	public uint Type { get; set; } = 0;
 	public float AreaAngleX { get; set; } = 0.0f;
@@ -242,18 +243,17 @@ public class LazyLightsComponents {
 
 	public async void ImportLightJson(string s) {
 		List<LazyKtisisLight> decode = [];
-		try
-		{
+		try	{
 			decode = new JsonFileSerializer().Deserialize<List<LazyKtisisLight>>(s);
-		} catch (Exception e)
-		{
+		} 
+		catch (Exception e)	{
 			Ktisis.Log.Debug("Light import: Failed to import." + e.ToString());
 			return;
 		}
 
 		if (decode == null || decode.Count == 0) return;
-		foreach (LazyKtisisLight l in decode)
-		{
+
+		foreach (LazyKtisisLight l in decode) {
 			Ktisis.Log.Debug("Light imported:" + l.Name);
 			await this.LoadKtisisLights(l);
 		}
@@ -273,8 +273,13 @@ public class LazyLightsComponents {
 	#endregion
 
 	#region Lights utilities
-	private void LightsDeleteAll() {
+	public void LightsDeleteAll() {
+		var l = this._ctx.Scene.Children.OfType<LightEntity>().ToList();
+		if(l == null) return;
 
+		foreach(LightEntity le in l) {
+			le.Delete();
+		}
 	}
 	#endregion
 
