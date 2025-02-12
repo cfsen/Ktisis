@@ -12,16 +12,20 @@ using Ktisis.Interface.Types;
 using Ktisis.Interface.Components.Workspace;
 using Ktisis.Interface.Editor.Types;
 using Ktisis.LazyExtras.Components;
+using System.IO;
 
 namespace Ktisis.Interface.Windows;
 
 public class LazyLight :KtisisWindow {
 	private readonly IEditorContext _ctx;
+	private readonly GuiManager _gui;
 	private readonly LazyLightsComponents _lazyLightsComponents;
 	public LazyLight(
-		IEditorContext ctx
+		IEditorContext ctx,
+		GuiManager gui
 	) : base("Lazy lights") {
 		this._ctx = ctx;
+		this._gui = gui;
 		this._lazyLightsComponents = new LazyLightsComponents(ctx);
 	}
 
@@ -33,7 +37,7 @@ public class LazyLight :KtisisWindow {
 
 	public override void PreDraw() {
 		this.SizeConstraints = new WindowSizeConstraints {
-			MinimumSize = new(280,300),
+			MinimumSize = new(240,130),
 			MaximumSize = new(560,600)
 		};
 	}
@@ -47,12 +51,39 @@ public class LazyLight :KtisisWindow {
 			this._lazyLightsComponents.SpawnStudioApartmentAmbientLights();
 		ImGui.Separator();
 		ImGui.Text("Import/Export");
-		if(ImGui.Button("Export"))
+		if(ImGui.Button("Export")) {
 			this._lazyLightsComponents.LightsSave();
+			this._gui.FileDialogs.SaveFile(
+				"Save lights",
+				this._lazyLightsComponents._json,
+				new GLib.Popups.ImFileDialog.FileDialogOptions{ 
+					Filters="Ktisis lights{.klights}",
+					Extension = ".klights" 
+					}
+				);
+		}
 		ImGui.SameLine();
-		if(ImGui.Button("Import"))
-			this._lazyLightsComponents.ImportLightJson(this._lazyLightsComponents._json);
-		// TODO this should be replaced with a proper file-based solution.
-		ImGui.InputTextMultiline("", ref this._lazyLightsComponents._json, uint.MaxValue, new Vector2(280, 120));
+		if(ImGui.Button("Import")) {
+			this._gui.FileDialogs.OpenFile(
+				"Ktisis lights", 
+				(path) => { 
+					try	{
+						var _ = File.ReadAllText(path);
+						this._lazyLightsComponents._json = _;
+						this._lazyLightsComponents.ImportLightJson(_);
+					}
+					catch { 
+						Ktisis.Log.Debug("LazyLights: Couldn't read the file. Cry about it.");	
+					}
+				}, 
+				new GLib.Popups.ImFileDialog.FileDialogOptions {
+					Filters="Ktisis lights{.klights}",
+					Extension=".klights"
+			});
+		}
+		ImGui.SameLine();
+		if(ImGui.Button("Remove all lights"))
+			this._lazyLightsComponents.LightsDeleteAll();
+
 	}
 }
