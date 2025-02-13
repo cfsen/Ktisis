@@ -213,6 +213,9 @@ public class EditorInterface : IEditorInterface {
 		=> this._gui.FileDialogs.SaveFile("Export Pose File", file, PoseFileOptions);
 	
 	// Lazy extras
+	public void ToggleLazyLights() => this._gui.GetOrCreate<LazyLight>(this._ctx, this._gui).Toggle();
 
 	public void ToggleLazyPose() => this._gui.GetOrCreate<LazyPose>(this._ctx).Toggle();
+
+	public void ToggleLazyCamera() => this._gui.GetOrCreate<LazyCamera>(this._ctx, this._gui).Toggle();
 }
