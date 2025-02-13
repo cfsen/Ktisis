@@ -102,6 +102,11 @@ public class WorkspaceWindow : KtisisWindow {
 			this.Interface.ToggleLazyPose();
 
 		ImGui.SameLine(0, spacing);
+
+		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Camera, "Lazy camera"))
+			this.Interface.ToggleLazyCamera();
+
+		ImGui.SameLine(0, spacing);
 		ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - Buttons.CalcSize() * 2 - spacing);
 		
 		using (var _ = ImRaii.Disabled(!this._ctx.Actions.History.CanUndo))
