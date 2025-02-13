@@ -61,4 +61,5 @@ public interface IEditorInterface {
 	// Lazy extras
 	public void ToggleLazyLights();
 	public void ToggleLazyPose();
+	public void ToggleLazyCamera();
 }
