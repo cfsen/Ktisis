@@ -23,6 +23,8 @@ public interface ICameraManager : IDisposable {
 	public void SetCurrent(EditorCamera camera);
 	public void SetNext();
 	public void SetPrevious();
+
+	public void RemoveCamera(EditorCamera camera);
 	
 	public bool IsWorkCameraActive { get; }
 	public void SetWorkCameraMode(bool enabled);
@@ -133,6 +135,12 @@ public class CameraManager : ICameraManager {
 			this.SetCurrent(this.CameraList[prev]);
 	}
 	
+	public void RemoveCamera(EditorCamera camera) {
+		if (this.Current == null || this.Current == camera || !this.CameraList.Contains(camera)) return;
+		if(camera is KtisisCamera kc) kc.Dispose();
+		this.CameraList.Remove(camera);
+	}
+
 	// Work camera
 
 	public void SetWorkCameraMode(bool enabled) {
