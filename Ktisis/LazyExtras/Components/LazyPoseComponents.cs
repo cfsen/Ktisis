@@ -28,75 +28,84 @@ public class LazyPoseComponents {
 	#region look at target
 	public void SetTarget() {
 		// targets the current selection for gazing
-		if (this._ctx.Transform.Target == null)
+		if (this._ctx.Transform.Target == null) 
 			return;
 		this.TargetLookPosition = this._ctx.Transform.Target.GetTransform()?.Position ?? Vector3.Zero;
 	}
 	#endregion
 	#region working implementation
-	private void OrientEyeToCam(Vector3? targetOverride = null) {
+	private void SetGazeToPosition(Vector3? targetOverride = null) {
+		// TODO refactor name
 		if (this._ctx.Transform.Target == null || this._ctx.Cameras.Current == null)
 			return;
 
+		// TODO ViewMatrix for more accurate gaze
 		Vector3 currentCam;
-		if (this._ctx.Cameras.Current?.FixedPosition != null)
-		{
+		if (this._ctx.Cameras.Current?.FixedPosition != null) {
 			currentCam = this._ctx.Cameras.Current?.FixedPosition ?? Vector3.Zero;
 			currentCam += this._ctx.Cameras.Current?.RelativeOffset ?? Vector3.Zero;
-		} else
+		} 
+		else {
 			currentCam = this._ctx.Cameras.Current?.GetPosition() ?? Vector3.Zero;
+			currentCam += this._ctx.Cameras.Current?.RelativeOffset ?? Vector3.Zero;
+		}
 
-		var target = this._ctx.Transform.Target;
-		Transform selectedBone = target?.GetTransform() ?? new Transform();
-
-		// for gazing at non-camera target
+		// Override for non-camera target
 		if (targetOverride != null)
 			currentCam = targetOverride.Value;
 
-		// buffer changes 
+		// Fetch current state of target
+		var target = this._ctx.Transform.Target;
+		Transform selectedBone = target?.GetTransform() ?? new Transform();
+		
+		// Buffer changes 
 		Transform tmp = selectedBone;
-		tmp.Rotation = this.TransformEyeToCamera(selectedBone, currentCam);
+		tmp.Rotation = this.CalcGazeToPosition(selectedBone, currentCam);
 
-		// update transform
+		// Update transform
 		target?.SetTransform(tmp);
 	}
 	public void LookAtCamera(Vector3? targetOverride = null) {
+		// Store state of UI selection
 		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
+
+		// Recurse and find parent ActorEntity
 		var selected = this.ResolveActorEntity();
 		if (selected == null)
 			return;
 
-		// TODO eeeh I could just grab the relevant bones individually and not need to loop
+		// Recurses through the actor to find the eyes.
+		// TODO This is localization dependant
+		// TODO recursing through the entire actor is redundant
 		foreach (SceneEntity s in selected.Recurse().Where(s => s.Type == EntityType.BoneNode))
 		{
 			if (s.Name == "Left Eye" || s.Name == "Right Eye")
 			{
 				this._ctx.Selection.Select(s);
-				this.OrientEyeToCam(targetOverride);
+				this.SetGazeToPosition(targetOverride);
 			}
 		}
 
+		// Return state of selected UI element
 		if (lastSelected != null)
 			this._ctx.Selection.Select(lastSelected);
 	}
-	private Quaternion TransformEyeToCamera(Transform org, Vector3 cameraPosition) {
-		// Orients the eye towards the camera
-		Matrix4x4 bill = Matrix4x4.CreateBillboard(org.Position, cameraPosition, Vector3.UnitY, Vector3.UnitX);
-		// Orients the eye outwards again.
+	private Quaternion CalcGazeToPosition(Transform eye, Vector3 targetPosition) {
+		// TODO This kinda works most of the time, but it's hacky.
+		// TODO refactor name, since this technically does point any type of transform at an arbitrary position.
+
+		// Create a billboard for initial orientation 
+		Matrix4x4 billboard = Matrix4x4.CreateBillboard(eye.Position, targetPosition, Vector3.UnitY, Vector3.UnitX);
+
+		// Correct rotation around Y axis
 		Matrix4x4 yflip = Matrix4x4.CreateRotationY(this.DegToRad(90.0f));
-		bill = Matrix4x4.Multiply(yflip, bill);
-		// Reorient the eye X axis
-		Matrix4x4 xflip = Matrix4x4.CreateRotationX(this.DegToRad(HkaEulerAngles.ToEuler(org.Rotation).X));
-		bill = Matrix4x4.Multiply(xflip, bill);
-		return Quaternion.CreateFromRotationMatrix(bill);
-	}
-	#endregion
-	#region support functions
-	private double RadToDeg(float rad) {
-		return rad * 180 / Math.PI;
-	}
-	private float DegToRad(float deg) {
-		return (float)(deg * Math.PI / 180);
+		billboard = Matrix4x4.Multiply(yflip, billboard);
+
+		// Reorients any X-rotation that might have happened. 
+		Matrix4x4 xflip = Matrix4x4.CreateRotationX(this.DegToRad(HkaEulerAngles.ToEuler(eye.Rotation).X));
+		billboard = Matrix4x4.Multiply(xflip, billboard);
+
+		return Quaternion.CreateFromRotationMatrix(billboard);
 	}
 	#endregion
 	#region work in progress
@@ -327,7 +336,13 @@ public class LazyPoseComponents {
 	}
 
 	#endregion
-	private void DrawContextInspector() {
-
+	#region support functions
+	private double RadToDeg(float rad) {
+		return rad * 180 / Math.PI;
 	}
+	private float DegToRad(float deg) {
+		return (float)(deg * Math.PI / 180);
+	}
+	#endregion
+
 }
