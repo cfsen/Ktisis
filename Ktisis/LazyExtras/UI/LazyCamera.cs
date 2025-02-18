@@ -35,6 +35,11 @@ public class LazyCamera :KtisisWindow {
 	private Stopwatch _stopwatch = new Stopwatch();
 	private Vector3 _vel = Vector3.Zero;
 
+	private float _dLastDt = 0.0f;
+	private float _dLowDt = float.MaxValue;
+	private float _dHighDt = float.MinValue;
+	private float _dAvgDt = 0.0f;
+
 	public LazyCamera(
 		IEditorContext ctx,
 		GuiManager gui,
@@ -62,10 +67,25 @@ public class LazyCamera :KtisisWindow {
 
 	public override void Draw() {
 		// TODO Disable all interactions when work camera is enabled
+		//ImGui.Text(this._dAvgDt.ToString());
 		this.NavControls();
 		this.SetCamFov();
 		//this.GetCamData();
 		this.CameraList();
+	}
+
+	private void dUpdateDt(float dt) {
+		if(dt < this._dLowDt) {
+			this._dLowDt = dt;
+			Ktisis.Log.Debug("New low dt: " + dt.ToString());
+		}
+		if(dt > this._dHighDt) {
+			this._dHighDt = dt; 
+			Ktisis.Log.Debug("New high dt: " + dt.ToString());
+		}
+		float t = (this._dLastDt+dt)/2;
+		this._dAvgDt = t;
+		this._dLastDt = dt;
 	}
 
 	private unsafe void NavControls() {
@@ -75,14 +95,13 @@ public class LazyCamera :KtisisWindow {
 		// TODO be less lazy
 		float ypos = ec.RelativeOffset.Y;
 
+		// makeshift delta time
 		float dt = this._stopwatch.ElapsedMilliseconds / 1000.0f;
 		this._stopwatch.Restart();
-
-		var width = 300;
-		var pos = ImGui.GetCursorScreenPos();
-		var size = new Vector2(width, width);
 	
-		this._gizmo.Begin(size);
+		//this.dUpdateDt(dt);
+
+		this._gizmo.Begin(new Vector2(300, 300));
 		this._gizmo.Mode = ImGuizmo.Mode.World;
 
 		// Arbitrary matrix, since we can derive world orientation via CalcRotation() later
@@ -93,6 +112,12 @@ public class LazyCamera :KtisisWindow {
 		this._gizmo.End();
 
 		if (result)	{
+			/*
+			 * This cursed abomination maps input from the translation gizmo's XY handles
+			 * to movement along the XZ plane, relative to where the camera is facing.
+			 * Y: Moves the camera forward
+			 * X: Moves the camera laterally
+			 * */
 			double angle = ec.Camera->CalcRotation().X + Math.PI;
 			Vector3 delta = Vector3.Zero;
 			float deltaDampening = 10.0f;
@@ -101,27 +126,30 @@ public class LazyCamera :KtisisWindow {
 				delta.X = (float)(Math.Sin(angle)*matrix.Translation.Y);
 				delta.Z = (float)(Math.Cos(angle)*matrix.Translation.Y);
 			}
-			// sideways
-			if(matrix.Translation.X != 0.0f)
-			{
+			// lateral
+			if(matrix.Translation.X != 0.0f) {
 				delta.X += -(float)(Math.Sin(angle+(Math.PI/2))*matrix.Translation.X);
 				delta.Z += -(float)(Math.Cos(angle+(Math.PI/2))*matrix.Translation.X);
 			}
 
-			//this._vel += ec.RelativeOffset + delta*deltaDampening*dt;
+			// buffer changes
 			this._vel += delta*deltaDampening;
-			//ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, this._vel, 0.1f);
+			//Ktisis.Log.Debug("vel:" + this._vel.ToString());
 		}
 
 		// Decelerate
 		if(this._vel.X != 0.0f || this._vel.Z != 0.0f) {
+			//Vector3 dbgPrev = ec.RelativeOffset;
+			//Vector3 dbgTarget = ec.RelativeOffset*this._vel*dt;
 			ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, (ec.RelativeOffset+this._vel*dt), 0.1f);
+			//Vector3 dbgAfter = ec.RelativeOffset;
 			this._vel *= (float)Math.Pow(1e-7f, dt);
 
-			// Just stop bro
+			// Stop when movement becomes hard to discern.
 			if(this._vel.Length() < 1e-2f)
 				this._vel = Vector3.Zero;
-			//Ktisis.Log.Debug(this._vel.ToString());
+
+			//Ktisis.Log.Debug("dbg:" + dbgPrev.ToString() + "|" + dbgTarget.ToString() + "|" + dbgAfter.ToString());
 		}
 
 		// TODO less lazy
