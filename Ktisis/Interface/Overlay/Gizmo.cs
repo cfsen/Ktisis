@@ -10,7 +10,8 @@ namespace Ktisis.Interface.Overlay;
 public enum GizmoId : int {
 	Default = -1,
 	OverlayMain,
-	TransformEditor
+	TransformEditor,
+	LazyGizmo
 }
 
 public interface IGizmo {
