@@ -64,20 +64,24 @@ public class LazyCamera :KtisisWindow {
 		// TODO Disable all interactions when work camera is enabled
 		this.NavControls();
 		this.SetCamFov();
-		this.GetCamData();
+		//this.GetCamData();
 		this.CameraList();
 	}
 
 	private unsafe void NavControls() {
+
 		EditorCamera? ec = this._ctx.Cameras.Current;
 		if(ec == null) return;
-		float dt = this._stopwatch.ElapsedMilliseconds;
+		// TODO be less lazy
+		float ypos = ec.RelativeOffset.Y;
+
+		float dt = this._stopwatch.ElapsedMilliseconds / 1000.0f;
 		this._stopwatch.Restart();
 
 		var width = 300;
 		var pos = ImGui.GetCursorScreenPos();
 		var size = new Vector2(width, width);
-
+	
 		this._gizmo.Begin(size);
 		this._gizmo.Mode = ImGuizmo.Mode.World;
 
@@ -91,7 +95,7 @@ public class LazyCamera :KtisisWindow {
 		if (result)	{
 			double angle = ec.Camera->CalcRotation().X + Math.PI;
 			Vector3 delta = Vector3.Zero;
-			float deltaDampening = 0.1f;
+			float deltaDampening = 10.0f;
 			// Forwards/backwards
 			if(matrix.Translation.Y != 0.0f) {
 				delta.X = (float)(Math.Sin(angle)*matrix.Translation.Y);
@@ -104,14 +108,24 @@ public class LazyCamera :KtisisWindow {
 				delta.Z += -(float)(Math.Cos(angle+(Math.PI/2))*matrix.Translation.X);
 			}
 
-			this._vel += ec.RelativeOffset + delta*deltaDampening*dt;
-			ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, this._vel, 0.1f);
+			//this._vel += ec.RelativeOffset + delta*deltaDampening*dt;
+			this._vel += delta*deltaDampening;
+			//ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, this._vel, 0.1f);
 		}
 
 		// Decelerate
-		if(this._vel.X != 0.0f || this._vel.Y != 0.0f) {
-			this._vel *= 0.01f;
+		if(this._vel.X != 0.0f || this._vel.Z != 0.0f) {
+			ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, (ec.RelativeOffset+this._vel*dt), 0.1f);
+			this._vel *= (float)Math.Pow(1e-7f, dt);
+
+			// Just stop bro
+			if(this._vel.Length() < 1e-2f)
+				this._vel = Vector3.Zero;
+			//Ktisis.Log.Debug(this._vel.ToString());
 		}
+
+		// TODO less lazy
+		ec.RelativeOffset.Y = ypos;
 	}
 
 	private void CameraList() {
