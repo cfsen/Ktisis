@@ -14,9 +14,12 @@ public class Gizmo2D {
 
 	private readonly IGizmo Gizmo;
 
-	public Gizmo2D(IGizmo gizmo) {
+	public Gizmo2D(IGizmo gizmo, bool translate = false) {
 		this.Gizmo = gizmo;
-		this.Gizmo.Operation = Operation.ROTATE;
+		if(translate)
+			this.Gizmo.Operation = Operation.TRANSLATE;
+		else
+			this.Gizmo.Operation = Operation.ROTATE;
 		this.Gizmo.ScaleFactor = ScaleFactor;
 	}
 	
