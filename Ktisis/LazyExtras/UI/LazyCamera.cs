@@ -106,7 +106,7 @@ public class LazyCamera :KtisisWindow {
 
 		// Arbitrary matrix, since we can derive world orientation via CalcRotation() later
 		var matrix = Matrix4x4.CreateFromAxisAngle(Vector3.Zero, 1.0f); 
-		this._gizmo.SetLookAt(new Vector3{ X = 1.0f, Y = 1.0f, Z = 1.0f}, matrix.Translation, 0.5f);
+		this._gizmo.SetLookAt(new Vector3{ X = 0.0f, Y = 0.0f, Z = 1.0f}, matrix.Translation, 0.5f);
 		var result = this._gizmo.Manipulate(ref matrix, out _);
 
 		this._gizmo.End();
