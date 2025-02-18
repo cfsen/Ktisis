@@ -25,46 +25,56 @@ public class LightWindow : EntityEditWindow<LightEntity> {
 		LocaleManager locale
 	) : base("Light Editor", ctx) {
 		this._locale = locale;
-		_lights.Add("Off", new Vector3(0.0f, 0.0f, 0.0f));
-		_lights.Add("Direct Sunlight", new Vector3(255 / 255.0f, 255 / 255.0f, 255 / 255.0f));
-		_lights.Add("High Noon Sun", new Vector3(255 / 255.0f, 255 / 255.0f, 251 / 255.0f));
-		_lights.Add("Overcast Sky", new Vector3(201 / 255.0f, 226 / 255.0f, 255 / 255.0f));
-		_lights.Add("Clear Blue Sky", new Vector3(64 / 255.0f, 156 / 255.0f, 255 / 255.0f));
-		_lights.Add("LB0", new Vector3(0.0f, 0.0f, 0.0f));
-		_lights.Add("Warm Fluorescent", new Vector3(255 / 255.0f, 244 / 255.0f, 229 / 255.0f));
-		_lights.Add("Full Spectrum Fluorescent", new Vector3(255 / 255.0f, 244 / 255.0f, 242 / 255.0f));
-		_lights.Add("Grow Light Fluorescent", new Vector3(255 / 255.0f, 239 / 255.0f, 247 / 255.0f));
-		_lights.Add("Standard Fluorescent", new Vector3(244 / 255.0f, 255 / 255.0f, 250 / 255.0f));
-		_lights.Add("Cool White Fluorescent", new Vector3(212 / 255.0f, 235 / 255.0f, 255 / 255.0f));
-		_lights.Add("Black Light Fluorescent", new Vector3(167 / 255.0f, 0 / 255.0f, 255 / 255.0f));
+		_lights.Add("Off", this.RGBToVector(0, 0, 0));
 
-		_lights.Add("LB1", new Vector3(0.0f, 0.0f, 0.0f));
+		_lights.Add("Direct Sunlight", this.RGBToVector(255,255,255));
+		_lights.Add("High Noon Sun", this.RGBToVector(255,255,251));
+		_lights.Add("Overcast Sky", this.RGBToVector(201,226,255));
+		_lights.Add("Clear Blue Sky", this.RGBToVector(64,156,255));
 
-		_lights.Add("High Pressure Sodium", new Vector3(255 / 255.0f, 183 / 255.0f, 76 / 255.0f));
-		_lights.Add("Sodium Vapor", new Vector3(255 / 255.0f, 209 / 255.0f, 178 / 255.0f));
-		_lights.Add("Metal Halide", new Vector3(242 / 255.0f, 252 / 255.0f, 255 / 255.0f));
-		_lights.Add("Mercury Vapor", new Vector3(216 / 255.0f, 247 / 255.0f, 255 / 255.0f));
+		_lights.Add("Fog day", this.RGBToVector(163, 204, 191));
+		_lights.Add("Fog night", this.RGBToVector(52, 72, 102));
+		_lights.Add("Rainy day", this.RGBToVector(178,206,357));
+		_lights.Add("Rainy night", this.RGBToVector(76,116,153));
 
-		_lights.Add("LB2", new Vector3(0.0f, 0.0f, 0.0f));
 
-		_lights.Add("Candle", new Vector3(255 / 255.0f, 147 / 255.0f, 41 / 255.0f));
-		_lights.Add("40W Tungsten", new Vector3(255 / 255.0f, 197 / 255.0f, 143 / 255.0f));
-		_lights.Add("100W Tungsten", new Vector3(255 / 255.0f, 214 / 255.0f, 170 / 255.0f));
-		_lights.Add("Halogen", new Vector3(255 / 255.0f, 241 / 255.0f, 224 / 255.0f));
-		_lights.Add("Carbon Arc", new Vector3(255 / 255.0f, 250 / 255.0f, 244 / 255.0f));
+		_lights.Add("LB0", Vector3.Zero);
+		
+		_lights.Add("Warm Fluorescent", this.RGBToVector(255,244,229));
+		_lights.Add("Full Spectrum Fluorescent", this.RGBToVector(255,244,242));
+		_lights.Add("Grow Light Fluorescent", this.RGBToVector(255,239,247));
+		_lights.Add("Standard Fluorescent", this.RGBToVector(244,255,250));
+		_lights.Add("Cool White Fluorescent", this.RGBToVector(212,235,255));
+		_lights.Add("Black Light Fluorescent", this.RGBToVector(167,0,255));
 
-		_lights.Add("LB3", new Vector3(0.0f, 0.0f, 0.0f));
+		_lights.Add("LB1", Vector3.Zero);
 
-		_lights.Add("5500K", new Vector3(248 / 255.0f, 255 / 255.0f, 183 / 255.0f));
-		_lights.Add("5100K", new Vector3(255 / 255.0f, 248 / 255.0f, 167 / 255.0f));
-		_lights.Add("4700K", new Vector3(255 / 255.0f, 234 / 255.0f, 144 / 255.0f));
-		_lights.Add("4300K", new Vector3(255 / 255.0f, 218 / 255.0f, 122 / 255.0f));
-		_lights.Add("3900K", new Vector3(255 / 255.0f, 201 / 255.0f, 100 / 255.0f));
-		_lights.Add("3500K", new Vector3(255 / 255.0f, 182 / 255.0f, 78 / 255.0f));
-		_lights.Add("3100K", new Vector3(255 / 255.0f, 162 / 255.0f, 57 / 255.0f));
-		_lights.Add("2700K", new Vector3(255 / 255.0f, 139 / 255.0f, 39 / 255.0f));
-		_lights.Add("2300K", new Vector3(255 / 255.0f, 115 / 255.0f, 23 / 255.0f));
-		_lights.Add("1900K", new Vector3(255 / 255.0f, 89 / 255.0f, 11 / 255.0f));
+		_lights.Add("High Pressure Sodium", this.RGBToVector(255,183,76));
+		_lights.Add("Sodium Vapor", this.RGBToVector(255,209,178));
+		_lights.Add("Thavnarian Lamp", this.RGBToVector(255,247,176));
+		_lights.Add("Metal Halide", this.RGBToVector(242,252,255));
+		_lights.Add("Mercury Vapor", this.RGBToVector(216,247,255));
+
+		_lights.Add("LB2", Vector3.Zero);
+
+		_lights.Add("Candle", this.RGBToVector(255,147,41));
+		_lights.Add("40W Tungsten", this.RGBToVector(255,197,143));
+		_lights.Add("100W Tungsten", this.RGBToVector(255,214,170));
+		_lights.Add("Halogen", this.RGBToVector(255,241,224));
+		_lights.Add("Carbon Arc", this.RGBToVector(255,250,244));
+
+		_lights.Add("LB3", Vector3.Zero);
+
+		_lights.Add("5500K", this.RGBToVector(248,255,183));
+		_lights.Add("5100K", this.RGBToVector(255,248,167));
+		_lights.Add("4700K", this.RGBToVector(255,234,144));
+		_lights.Add("4300K", this.RGBToVector(255,218,122));
+		_lights.Add("3900K", this.RGBToVector(255,201,100));
+		_lights.Add("3500K", this.RGBToVector(255,182,78));
+		_lights.Add("3100K", this.RGBToVector(255,162,57));
+		_lights.Add("2700K", this.RGBToVector(255,139,39));
+		_lights.Add("2300K", this.RGBToVector(255,115,23));
+		_lights.Add("1900K", this.RGBToVector(255,89,11));
 		_lights.Add("1500K", this.RGBToVector(255, 61, 4));
 
 		_lights.Add("LB4", Vector3.Zero);
