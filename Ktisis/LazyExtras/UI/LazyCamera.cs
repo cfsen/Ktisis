@@ -34,6 +34,7 @@ public class LazyCamera :KtisisWindow {
 	private Gizmo2D _gizmo;
 	private Stopwatch _stopwatch = new Stopwatch();
 	private Vector3 _vel = Vector3.Zero;
+	private float _gizmoSensitivity = 10.0f;
 
 	private float _dLastDt = 0.0f;
 	private float _dLowDt = float.MaxValue;
@@ -61,7 +62,7 @@ public class LazyCamera :KtisisWindow {
 	public override void PreDraw() {
 		this.SizeConstraints = new WindowSizeConstraints {
 			MinimumSize = new(280,300),
-			MaximumSize = new(560,600)
+			MaximumSize = new(280,600)
 		};
 	}
 
@@ -69,6 +70,8 @@ public class LazyCamera :KtisisWindow {
 		// TODO Disable all interactions when work camera is enabled
 		//ImGui.Text(this._dAvgDt.ToString());
 		this.NavControls();
+		this.GizmoConfigControls();
+		ImGui.Separator();
 		this.SetCamFov();
 		//this.GetCamData();
 		this.CameraList();
@@ -88,6 +91,10 @@ public class LazyCamera :KtisisWindow {
 		this._dLastDt = dt;
 	}
 
+	private void GizmoConfigControls() {
+		ImGui.SliderFloat("Sensitivity", ref this._gizmoSensitivity, 1.0f, 100.0f);
+	}
+
 	private unsafe void NavControls() {
 
 		EditorCamera? ec = this._ctx.Cameras.Current;
@@ -101,7 +108,7 @@ public class LazyCamera :KtisisWindow {
 	
 		//this.dUpdateDt(dt);
 
-		this._gizmo.Begin(new Vector2(300, 300));
+		this._gizmo.Begin(new Vector2(310, 310));
 		this._gizmo.Mode = ImGuizmo.Mode.World;
 
 		// Arbitrary matrix, since we can derive world orientation via CalcRotation() later
@@ -120,7 +127,7 @@ public class LazyCamera :KtisisWindow {
 			 * */
 			double angle = ec.Camera->CalcRotation().X + Math.PI;
 			Vector3 delta = Vector3.Zero;
-			float deltaDampening = 10.0f;
+			//float deltaDampening = 10.0f;
 			// Forwards/backwards
 			if(matrix.Translation.Y != 0.0f) {
 				delta.X = (float)(Math.Sin(angle)*matrix.Translation.Y);
@@ -133,7 +140,7 @@ public class LazyCamera :KtisisWindow {
 			}
 
 			// buffer changes
-			this._vel += delta*deltaDampening;
+			this._vel += delta*this._gizmoSensitivity;
 			//Ktisis.Log.Debug("vel:" + this._vel.ToString());
 		}
 
@@ -218,8 +225,14 @@ public class LazyCamera :KtisisWindow {
 		if(this._DelimitMinFoV)
 			minfov = 0.21f;
 
+		if(!this._DelimitMinFoV)
+			ImGui.BeginDisabled();
+
 		ec.Camera->GameCamera.MinFoV = minfov;
 		ImGui.SliderFloat("FOV", ref ec.Camera->GameCamera.FoV, minfov, 0.78f, "", ImGuiSliderFlags.AlwaysClamp);
+
+		if(!this._DelimitMinFoV)
+			ImGui.EndDisabled();
 
 		ImGui.Checkbox("Allow lower FOV", ref this._DelimitMinFoV);
 	}
