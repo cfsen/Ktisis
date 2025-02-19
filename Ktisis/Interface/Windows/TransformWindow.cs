@@ -185,7 +185,7 @@ public class TransformWindow : KtisisWindow {
 	}
 
 	private void DrawGizmoCircle(Vector2 pos, Vector2 size, float width) {
-		ImGui.GetWindowDrawList().AddCircleFilled(pos + size / 2, (width * Gizmo2D.ScaleFactor) / 2.05f, 0xCF202020);
+		ImGui.GetWindowDrawList().AddCircleFilled(pos + size / 2, (width * this._gizmo.ScaleFactor) / 2.05f, 0xCF202020);
 	}
 	
 	// Transform setup

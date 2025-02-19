@@ -8,19 +8,20 @@ using Ktisis.Interface.Overlay;
 namespace Ktisis.Interface.Components.Transforms;
 
 public class Gizmo2D {
-	public const float ScaleFactor = 0.5f;
+	public readonly float ScaleFactor = 0.5f;
 	
 	// Constructor & creation
 
 	private readonly IGizmo Gizmo;
 
-	public Gizmo2D(IGizmo gizmo, bool translate = false) {
+	public Gizmo2D(IGizmo gizmo, bool translate = false, float scaleFactor = 0.5f) {
 		this.Gizmo = gizmo;
 		if(translate)
 			this.Gizmo.Operation = Operation.TRANSLATE;
 		else
 			this.Gizmo.Operation = Operation.ROTATE;
-		this.Gizmo.ScaleFactor = ScaleFactor;
+		this.ScaleFactor = scaleFactor; 
+		this.Gizmo.ScaleFactor = this.ScaleFactor;
 	}
 	
 	// Gizmo state
