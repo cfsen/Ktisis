@@ -25,15 +25,15 @@ public class LazyPoseComponents {
 	public LazyPoseComponents(IEditorContext ctx) {
 		this._ctx = ctx;
 	}
-	#region look at target
+
+	// Gaze control
 	public void SetTarget() {
 		// targets the current selection for gazing
 		if (this._ctx.Transform.Target == null) 
 			return;
 		this.TargetLookPosition = this._ctx.Transform.Target.GetTransform()?.Position ?? Vector3.Zero;
 	}
-	#endregion
-	#region working implementation
+
 	private void SetGazeToPosition(Vector3? targetOverride = null) {
 		// TODO refactor name
 		if (this._ctx.Transform.Target == null || this._ctx.Cameras.Current == null)
@@ -65,6 +65,7 @@ public class LazyPoseComponents {
 		// Update transform
 		target?.SetTransform(tmp);
 	}
+
 	public void LookAtCamera(Vector3? targetOverride = null) {
 		// Store state of UI selection
 		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
@@ -77,10 +78,8 @@ public class LazyPoseComponents {
 		// Recurses through the actor to find the eyes.
 		// TODO This is localization dependant
 		// TODO recursing through the entire actor is redundant
-		foreach (SceneEntity s in selected.Recurse().Where(s => s.Type == EntityType.BoneNode))
-		{
-			if (s.Name == "Left Eye" || s.Name == "Right Eye")
-			{
+		foreach (SceneEntity s in selected.Recurse().Where(s => s.Type == EntityType.BoneNode))	{
+			if (s.Name == "Left Eye" || s.Name == "Right Eye") {
 				this._ctx.Selection.Select(s);
 				this.SetGazeToPosition(targetOverride);
 			}
@@ -90,9 +89,9 @@ public class LazyPoseComponents {
 		if (lastSelected != null)
 			this._ctx.Selection.Select(lastSelected);
 	}
+
 	private Quaternion CalcGazeToPosition(Transform eye, Vector3 targetPosition) {
 		// TODO This kinda works most of the time, but it's hacky.
-		// TODO refactor name, since this technically does point any type of transform at an arbitrary position.
 
 		// Create a billboard for initial orientation 
 		Matrix4x4 billboard = Matrix4x4.CreateBillboard(eye.Position, targetPosition, Vector3.UnitY, Vector3.UnitX);
@@ -107,168 +106,14 @@ public class LazyPoseComponents {
 
 		return Quaternion.CreateFromRotationMatrix(billboard);
 	}
-	#endregion
-	#region work in progress
-	private float EyeHeadOffset() {
-		var selected = this._ctx.Selection.GetSelected().OfType<ActorEntity>().FirstOrDefault();
-		var head = selected?.Pose?.FindBoneByName("j_kao")?.GetTransform() ?? null;
-		if (head == null)
-			return 0.0f;
-		return 360.0f - HkaEulerAngles.ToEuler(head.Rotation).X;
-
-	}
-	private void DumpsterDive(bool reset = false) {
-		// Must select an ActorEntity
-		var selected = this.ResolveActorEntity();
-		var lastSelected = this._ctx.Selection.GetSelected().OfType<ActorEntity>().FirstOrDefault();
-		if (selected == null)
-			return;
-		// TODO lookup parent ActorEntity
-		// camera check
-		var cameraPosition = this._ctx.Cameras.Current?.GetPosition() ?? null;
-		if (cameraPosition == null)
-			return;
-
-		// yoink relevant transforms
-		var leftEye = selected.Pose?.FindBoneByName("j_f_eye_l") ?? null;
-		var rightEye = selected.Pose?.FindBoneByName("j_f_eye_r") ?? null;
-		var head = selected.Pose?.FindBoneByName("j_kao") ?? null;
-
-		if (leftEye == null || rightEye == null || head == null)
-			return;
-
-		Transform? leftEyeTransform = leftEye.GetTransform() ?? null;
-		Transform? rightEyeTransform = rightEye.GetTransform() ?? null;
-		Transform? headTransform = head.GetTransform() ?? null;
-
-		// Wow, it's even more null-checking!
-		if (leftEyeTransform == null || rightEyeTransform == null || headTransform == null)
-			return;
-		// Preserve rotation around X axis for eyes, which is always: head.X + eye.X = 360
-		float eyeOrientation = 360.0f - HkaEulerAngles.ToEuler(headTransform.Rotation).X;
-
-		// Ktisis.Log.Debug("DD: eyeOrientation=" + eyeOrientation.ToString());
-
-		foreach (SceneEntity s in selected.Recurse())
-		{
-			if (s.Type == EntityType.BoneNode)
-			{
-				if (s.Name == "Left Eye")
-				{
-					this._ctx.Selection.Select(s);
-					this.OrientEyes("Left eye");
-				}
-				if (s.Name == "Right Eye")
-				{
-					this._ctx.Selection.Select(s);
-					this.OrientEyes("Right eye");
-				}
-			}
-		}
-		if (lastSelected != null)
-			this._ctx.Selection.Select(lastSelected);
-	}
-	private Quaternion AlternateEyeToCam(Transform org, Vector3 cameraPosition, string dbgLbl) {
-		var meu = HkaEulerAngles.ToEuler(org.Rotation);
-
-		/* What if you try to just move the difference?
-		 * adj-meu type of thing?
-		 * */
-		float offsetY = this.DegToRad(2.0f);
-		if (dbgLbl == "Left eye")
-			offsetY *= -1;
-		Vector3 v = cameraPosition - org.Position;
-		float adjY = (float)Math.Atan2(v.X, v.Z)+(float)Math.PI/2+offsetY;
-		float adjZ = (float)Math.Atan2(v.Y, v.Z)+(float)Math.PI;
-		float adjX = 0.0f;
-
-		Ktisis.Log.Debug("#### " + dbgLbl + " ####");
-		Ktisis.Log.Debug("> v=" + v.ToString());
-		Ktisis.Log.Debug("> adjY=" + adjY.ToString() + " | deg=" + this.RadToDeg(adjY));
-		Ktisis.Log.Debug("> adjZ=" + adjZ.ToString() + " | deg=" + this.RadToDeg(adjZ));
-		Ktisis.Log.Debug("> adjX=" + meu.X.ToString());
-
-		// TODO this fails 
-		bool limits = false;
-		if (limits)
-		{
-			// valid boundaries: 35 to 0, 0 to 320
-			float zmin = this.DegToRad(35.0f);
-			float zmax = this.DegToRad(320.0f);
-
-			// Check if outside bounds
-			if (adjZ > zmin && adjZ < zmax)
-			{
-
-				Ktisis.Log.Debug("! Z out of bounds");
-
-				// Reorient to closest maxium allowed angle
-				if (adjZ > (zmax - zmin) / 2)
-					adjZ = zmax;
-				else
-					adjZ = zmin;
-			}
-
-			float ymin = 0.0f;
-			float ymax = 0.0f;
-
-			if (dbgLbl == "Right eye")
-			{
-				ymin = this.DegToRad(52.0f);
-				ymax = this.DegToRad(122.0f);
-			} else
-			{
-				ymin = this.DegToRad(62.0f);
-				ymax = this.DegToRad(140.0f);
-			}
-
-
-			if (adjY > ymin && adjY < ymax)
-			{
-
-				Ktisis.Log.Debug("! Y out of bounds");
-
-				float secondSolution = adjY - (float)Math.PI / 2;
-				if (!(secondSolution > ymin && secondSolution < ymax))
-				{
-					adjY = secondSolution;
-				} else
-				{
-					if (adjY > (ymax - ymin))
-						adjY = ymax;
-					else
-						adjY = ymin;
-				}
-			}
-		}
-		adjX = this.DegToRad(360.0f - meu.X);
-		Matrix4x4 m4 = Matrix4x4.CreateFromYawPitchRoll(adjX, adjY, adjZ);
-		return Quaternion.CreateFromRotationMatrix(m4);
-	}
 
 	private void ResetEyes() {
 
 	}
 
-	private void OrientEyes(string eye = "") {
-		if (this._ctx.Transform.Target == null || this._ctx.Cameras.Current == null)
-			return;
-		Vector3 currentCam = this._ctx.Cameras.Current?.GetPosition() ?? new Vector3(0, 0, 0);
-		var target = this._ctx.Transform.Target;
-		Transform selectedBone = target?.GetTransform() ?? new Transform();
-
-		//buffer changes 
-		Transform tmp = new Transform();
-		tmp = selectedBone;
-		tmp.Rotation = this.AlternateEyeToCam(selectedBone, currentCam, eye);
-		target.SetTransform(tmp);
-	}
-	#endregion
-	#region visibility toggles
-	public void ToggleFigureBones() {
-		var selected = this.ResolveActorEntity();
-		if (selected == null)
-			return;
+	// Visibility
+	public void ToggleGestureBones() {
+		if (this.ResolveActorEntity() is not ActorEntity selected) return;
 
 		var bones = new List<string>(){"Abdomen", "Waist", "Lumbar", "Thoracic", "Cervical", "Head", "Neck",
 			"Left Shoulder (Twist)", "Left Arm", "Left Forearm", "Left Hand", "Left Clavicle",
@@ -276,32 +121,41 @@ public class LazyPoseComponents {
 			"Left Leg", "Left Calf", "Left Knee", "Left Foot",
 			"Right Leg", "Right Calf", "Right Knee", "Right Foot"};
 
+		this.ToggleBones(selected, bones);
+	}
+
+	public void ToggleGestureDetailBones() {
+		if (this.ResolveActorEntity() is not ActorEntity selected) return;
+
+		var bones = new List<string>() { "Left Toes", "Right Toes", "Left Wrist", "Right Wrist" };
+
+		this.ToggleBones(selected, bones);
+	}
+
+	private void ToggleBones(ActorEntity selected, List<string> bones) {
 		var nodes = selected.Recurse().Where(s => s.Type == EntityType.BoneNode);
-		foreach (var x in nodes)
-		{
-			if (x is IVisibility vis && bones.Contains(x.Name) && x is not BoneNodeGroup)
-			{
+		foreach (var x in nodes) {
+			if (x is IVisibility vis && bones.Contains(x.Name) && x is not BoneNodeGroup) {
+				if(x.Parent is EntityPose) continue; // Skip toggling weapon
 				vis.Toggle();
 			}
 		}
 	}
+
 	public void HideAllBones() {
 		var selected = this.ResolveActorEntity();
 		if (selected == null)
 			return;
 		var nodes = selected.Recurse();
-		foreach (var x in nodes)
-		{
-			if (x is IVisibility vis)
-			{
+		foreach (var x in nodes) {
+			if (x is IVisibility vis) {
 				if (vis.Visible)
 					vis.Toggle();
 			}
 		}
 	}
 
-	#endregion
-	#region parent actorentity resolver
+	// Target resolving
 	private ActorEntity? ResolveActorEntity() {
 		// Resolves the parent actor entity of any bone. Recursion warning.
 		var selected = this._ctx.Selection.GetSelected().FirstOrDefault();
@@ -335,14 +189,11 @@ public class LazyPoseComponents {
 		return null;
 	}
 
-	#endregion
-	#region support functions
+	// Support functions
 	private double RadToDeg(float rad) {
 		return rad * 180 / Math.PI;
 	}
 	private float DegToRad(float deg) {
 		return (float)(deg * Math.PI / 180);
 	}
-	#endregion
-
 }

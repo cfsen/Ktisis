@@ -53,10 +53,13 @@ public class LazyPose :KtisisWindow {
 
 		ImGui.Separator();
 		ImGui.Text("Bone overlay");
-		if (ImGui.Button("Show gesture bones"))
-			this._components.ToggleFigureBones();
+		if (ImGui.Button("Gesture bones"))
+			this._components.ToggleGestureBones();
 		ImGui.SameLine();
-		if (ImGui.Button("Hide all bones"))
+		if (ImGui.Button("Details"))
+			this._components.ToggleGestureDetailBones();
+		ImGui.SameLine();
+		if (ImGui.Button("Hide all"))
 			this._components.HideAllBones();
 	}
 }
