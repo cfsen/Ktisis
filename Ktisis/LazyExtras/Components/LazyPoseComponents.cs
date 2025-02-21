@@ -160,32 +160,37 @@ public class LazyPoseComponents {
 	}
 
 	// Partial reference pose loading
-
 	public void SetPartialReference() {
+		// Early return if no ActorEntity or head/neck can't be selected.
 		if(this.ResolveActorEntity() is not ActorEntity selected) return;
-		if(this.SelectBoneByName(selected, "Head") is not SceneEntity neck) return; // This selectes the GROUP called head, which is actually the neck
-		if(selected.Recurse().Where(x => x.Name == "Head" && x is not BoneNodeGroup).FirstOrDefault() is not SceneEntity head) return;
+		if(selected.Recurse()
+			.Where(x => x.Name == "Head" && x is BoneNodeGroup)
+			.FirstOrDefault() is not SceneEntity neck) return;
+		if(selected.Recurse()
+			.Where(x => x.Name == "Head" && x is not BoneNodeGroup)
+			.FirstOrDefault() is not SceneEntity head) return;
 
-		// Save current and load reference pose
+		// Save current and set reference pose
 		var epc = new EntityPoseConverter(selected.Pose!);
 		var org = epc.Save();
 		epc.LoadReferencePose();
 		var fin = epc.Save();
 
-		// Load the original expression and rotate+position neck to reference pose
+		// Load the original expression by loading bones from the head BoneNodeGroup 
 		this._ctx.Selection.Select(neck);
 		var gsb = epc.GetSelectedBones(false).ToList();
 		epc.LoadSelectedBones(org, PoseTransforms.Position | PoseTransforms.Rotation);
-		epc.LoadBones(fin, gsb, PoseTransforms.Position | PoseTransforms.Rotation);
 
-		// Change selection to head bone and rotate+position it to reference pose
+		// Set the the neck bones back to reference pose 
+		// Note: Passing both flags at once does not produce the same result
+		epc.LoadBones(fin, gsb, PoseTransforms.Position);
+		epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
+
+		// Rotate the head back into position
+		// Change selection to head bone and rotate it to reference pose
 		this._ctx.Selection.Select(head);
 		gsb = epc.GetSelectedBones(false).ToList();
-		epc.LoadBones(fin, gsb, PoseTransforms.Rotation | PoseTransforms.Position);
-	}
-	
-	private SceneEntity? SelectBoneByName(ActorEntity act, string name) {
-		return act.Recurse().Where(x => x.Name == name).FirstOrDefault();
+		epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
 	}
 
 	// Target resolving
