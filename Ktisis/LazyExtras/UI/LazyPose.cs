@@ -34,21 +34,23 @@ public class LazyPose :KtisisWindow {
 	public override void PreDraw() {
 		this.SizeConstraints = new WindowSizeConstraints {
 			MinimumSize = new(280,120),
-			MaximumSize = new(560,600)
+			MaximumSize = new(560*2,600*2)
 		};
 	}
 
 	public override void Draw() {
 		ImGui.Text("Gaze control");
 		if (ImGui.Button("Camera"))
-			this._components.LookAtCamera();
+			this._components.SetGazeAtCurrentCamera();
 		ImGui.SameLine();
 		if (ImGui.Button("Set target"))
-			this._components.SetTarget();
+			this._components.SetWorldGazeTarget();
 		ImGui.SameLine();
 		if (ImGui.Button("Look at"))
-			this._components.LookAtCamera(this._components.TargetLookPosition);
+			this._components.SetGazeAtWorldTarget();
 		ImGui.SameLine();
+		if (ImGui.Button("Reset gaze"))
+			this._components.ResetGaze();
 		ImGui.Text(this._components.TargetLookPosition.ToString());
 
 		ImGui.Separator();
@@ -62,8 +64,22 @@ public class LazyPose :KtisisWindow {
 		if (ImGui.Button("Hide all"))
 			this._components.HideAllBones();
 
+		//ImGui.Separator();
+		//ImGui.SameLine();
+		//if (ImGui.Button("Debug")) {
+		//	this._components.SetGazeAtCurrentCamera();
+		//	//this._components.dbgCsM4();
+		//}
+
 		ImGui.Separator();
 		if (ImGui.Button("Set expression export pose"))
 			this._components.SetPartialReference();
+		//ImGui.SameLine();
+		//if (ImGui.Button("Eye"))
+		//	this._components.SelectEyeBall();
+		//ImGui.Separator();
+		//this._components.dbgMatrixInspector("Left Eye");
+		//this._components.dbgMatrixInspector("Right Eye");
+		//this._components.dbgCsM4();
 	}
 }

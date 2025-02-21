@@ -82,7 +82,7 @@ public class PoseAutoSave : IDisposable {
 			return;
 		}
 		
-		Ktisis.Log.Info($"Auto saving poses for {entities.Count} character(s)");
+		//Ktisis.Log.Info($"Auto saving poses for {entities.Count} character(s)");
 		
 		foreach (var chara in entities) {
 			if (chara.Pose == null) continue;
