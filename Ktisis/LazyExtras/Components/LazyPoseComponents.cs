@@ -1,8 +1,12 @@
-﻿using ImGuiNET;
+﻿using FFXIVClientStructs.FFXIV.Client.UI;
+
+using ImGuiNET;
 
 using Ktisis.Common.Utility;
 using Ktisis.Data.Json;
 using Ktisis.Editor.Context.Types;
+using Ktisis.Editor.Posing.Data;
+using Ktisis.Editor.Posing.Types;
 using Ktisis.Scene.Decor;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
@@ -153,6 +157,35 @@ public class LazyPoseComponents {
 					vis.Toggle();
 			}
 		}
+	}
+
+	// Partial reference pose loading
+
+	public void SetPartialReference() {
+		if(this.ResolveActorEntity() is not ActorEntity selected) return;
+		if(this.SelectBoneByName(selected, "Head") is not SceneEntity neck) return; // This selectes the GROUP called head, which is actually the neck
+		if(selected.Recurse().Where(x => x.Name == "Head" && x is not BoneNodeGroup).FirstOrDefault() is not SceneEntity head) return;
+
+		// Save current and load reference pose
+		var epc = new EntityPoseConverter(selected.Pose!);
+		var org = epc.Save();
+		epc.LoadReferencePose();
+		var fin = epc.Save();
+
+		// Load the original expression and rotate+position neck to reference pose
+		this._ctx.Selection.Select(neck);
+		var gsb = epc.GetSelectedBones(false).ToList();
+		epc.LoadSelectedBones(org, PoseTransforms.Position | PoseTransforms.Rotation);
+		epc.LoadBones(fin, gsb, PoseTransforms.Position | PoseTransforms.Rotation);
+
+		// Change selection to head bone and rotate+position it to reference pose
+		this._ctx.Selection.Select(head);
+		gsb = epc.GetSelectedBones(false).ToList();
+		epc.LoadBones(fin, gsb, PoseTransforms.Rotation | PoseTransforms.Position);
+	}
+	
+	private SceneEntity? SelectBoneByName(ActorEntity act, string name) {
+		return act.Recurse().Where(x => x.Name == name).FirstOrDefault();
 	}
 
 	// Target resolving
