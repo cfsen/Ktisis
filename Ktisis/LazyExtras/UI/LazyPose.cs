@@ -61,5 +61,9 @@ public class LazyPose :KtisisWindow {
 		ImGui.SameLine();
 		if (ImGui.Button("Hide all"))
 			this._components.HideAllBones();
+
+		ImGui.Separator();
+		if (ImGui.Button("Set expression export pose"))
+			this._components.SetPartialReference();
 	}
 }
