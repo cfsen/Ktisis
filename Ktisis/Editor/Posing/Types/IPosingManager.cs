@@ -27,6 +27,13 @@ public interface IPosingManager : IDisposable {
 
 	public Task ApplyReferencePose(EntityPose pose);
 
-	public Task ApplyPoseFile(EntityPose pose, PoseFile file, PoseMode modes = PoseMode.All, PoseTransforms transforms = PoseTransforms.Rotation, bool selectedBones = false, bool anchorGroups = false);
+	public Task ApplyPoseFile(
+		EntityPose pose,
+		PoseFile file,
+		PoseMode modes = PoseMode.All,
+		PoseTransforms transforms = PoseTransforms.Rotation,
+		bool selectedBones = false,
+		bool anchorGroups = false,
+		bool anchorGroupsRotatio = false);
 	public Task<PoseFile> SavePoseFile(EntityPose pose);
 }
