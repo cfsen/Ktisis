@@ -120,6 +120,8 @@ public class PoseImportDialog : EntityEditWindow<ActorEntity> {
 		var hasPosition = file.ImportPoseTransforms.HasFlag(PoseTransforms.Position);
 		using (ImRaii.Disabled(!isSelectBones || !file.ImportPoseSelectedBones || !hasPosition))
 			ImGui.Checkbox("Anchor group positions", ref file.AnchorPoseSelectedBones);
+		using (ImRaii.Disabled(!isSelectBones || !file.ImportPoseSelectedBones || !hasPosition || !file.AnchorPoseSelectedBones))
+			ImGui.Checkbox("Restore rotation", ref file.AnchorPoseSelectedBonesRotate);
 	}
 	
 	// Apply pose
@@ -134,6 +136,6 @@ public class PoseImportDialog : EntityEditWindow<ActorEntity> {
 		var cfg = this._ctx.Config.File;
 		var selectedBones = isSelectBones && cfg.ImportPoseSelectedBones;
 		var anchorGroups = cfg.AnchorPoseSelectedBones;
-		this._ctx.Posing.ApplyPoseFile(pose, file, cfg.ImportPoseModes, cfg.ImportPoseTransforms, selectedBones, anchorGroups);
+		this._ctx.Posing.ApplyPoseFile(pose, file, cfg.ImportPoseModes, cfg.ImportPoseTransforms, selectedBones, anchorGroups, cfg.AnchorPoseSelectedBonesRotate);
 	}
 }
