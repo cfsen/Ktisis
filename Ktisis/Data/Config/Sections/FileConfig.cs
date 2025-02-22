@@ -14,6 +14,7 @@ public class FileConfig {
 	
 	public bool ImportPoseSelectedBones = false;
 	public bool AnchorPoseSelectedBones = false;
+	public bool AnchorPoseSelectedBonesRotate = false;
 	public PoseTransforms ImportPoseTransforms = PoseTransforms.Rotation;
 	public PoseMode ImportPoseModes = PoseMode.All;
 }
