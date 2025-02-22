@@ -156,7 +156,8 @@ public class PosingManager : IPosingManager {
 		PoseMode modes = PoseMode.All,
 		PoseTransforms transforms = PoseTransforms.Rotation,
 		bool selectedBones = false,
-		bool anchorGroups = false
+		bool anchorGroups = false,
+		bool anchorGroupsRotate = false
 	) {
 		return this._framework.RunOnFrameworkThread(() => {
 			if (file.Bones == null) return;
@@ -182,6 +183,19 @@ public class PosingManager : IPosingManager {
 			if (selectedBones && anchorGroups && transforms.HasFlag(PoseTransforms.Position)) {
 				var restored = converter.GetSelectedBones(false).ToList();
 				converter.LoadBones(initial, restored, PoseTransforms.Position);
+				
+				if (anchorGroupsRotate) {
+					// Look for children of anchored bones to restore their rotation
+					var allBones = converter.GetSelectedBones(true).ToList();
+					foreach (var selectedBone in restored.ToList()) {
+						var children = allBones.Where(x => x.ParentIndex == selectedBone.BoneIndex).ToList();
+						if (children.Count > 0)
+							foreach (var childBone in children)
+								restored.Add(childBone);
+					}
+
+					converter.LoadBones(initial, restored, PoseTransforms.Rotation);
+				}
 
 				if(restored.Count == 1 && restored[0].Name == "j_kubi") {
 					// Build temporary obj and lookup BoneIndex for face-bone (j_kao)
