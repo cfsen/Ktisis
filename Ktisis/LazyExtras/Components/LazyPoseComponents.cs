@@ -74,7 +74,11 @@ public class LazyPoseComponents {
 	public void ResetGaze() {
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;
 		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
+		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
+		
 		this.SetEyesTransform(ae, eyes[0], eyes[1]);
+		
+		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	/// <summary>
@@ -83,8 +87,12 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtWorldTarget(){
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
+		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
+		
 		// Use set position from SetWorldGazeTarget as target
 		this.SetGaze(ae, this.TargetLookPosition);
+
+		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	/// <summary>
@@ -93,13 +101,22 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtCurrentCamera(){
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
+		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
+
 		// Grab postion from current camera
 		if(this._ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
 		this.SetGaze(ae, target);
+
+		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	// Gaze logic 
 	
+	/// <summary>
+	/// Sets the gaze of given ActorEntity to a supplied point in world space.
+	/// </summary>
+	/// <param name="ae">ActorEntity to pose</param>
+	/// <param name="worldTarget">Point in world space for ActorEntity to look at</param>
 	private void SetGaze(ActorEntity ae, Vector3 worldTarget) {
 		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
 		if(this.GetHeadOrientation(ae) is not Matrix4x4 orientation) return;
@@ -227,6 +244,13 @@ public class LazyPoseComponents {
 
 	// Local/World space logic
 
+	/// <summary>
+	/// Generates world-local and inverse transformation matrices and populates `result`.
+	/// </summary>
+	/// <param name="q">Orientation of local space</param>
+	/// <param name="pos">Position of local space in world space</param>
+	/// <param name="result">Struct housing matrices</param>
+	/// <returns>true on success, false if matrices cannot be inverted.</returns>
 	private bool CalcWorldMatrices(Quaternion q, Vector3 pos, out WorldTransformData result) {
 		Matrix4x4 m = Matrix4x4.CreateFromQuaternion(q);
 		Matrix4x4 mp = Matrix4x4.CreateTranslation(pos);
@@ -260,6 +284,9 @@ public class LazyPoseComponents {
 
 	// Overlay visibility 
 
+	/// <summary>
+	/// Toggles overlay visibility of essential gesture bones
+	/// </summary>
 	public void ToggleGestureBones() {
 		if (this.ResolveActorEntity() is not ActorEntity selected) return;
 
@@ -271,7 +298,10 @@ public class LazyPoseComponents {
 
 		this.ToggleBones(selected, bones);
 	}
-
+	
+	/// <summary>
+	/// Toggles extra bones for gestures
+	/// </summary>
 	public void ToggleGestureDetailBones() {
 		if (this.ResolveActorEntity() is not ActorEntity selected) return;
 
@@ -280,6 +310,11 @@ public class LazyPoseComponents {
 		this.ToggleBones(selected, bones);
 	}
 
+	/// <summary>
+	/// Toggles the overlay visibility of bones in supplied list 
+	/// </summary>
+	/// <param name="selected">ActorEntity to toggle overlay for</param>
+	/// <param name="bones">Names of bones to toggle</param>
 	private void ToggleBones(ActorEntity selected, List<string> bones) {
 		var nodes = selected.Recurse().Where(s => s.Type == EntityType.BoneNode);
 		foreach (var x in nodes) {
@@ -290,6 +325,9 @@ public class LazyPoseComponents {
 		}
 	}
 
+	/// <summary>
+	/// Turns off visibility for all overlay bones for the currently selected actor
+	/// </summary>
 	public void HideAllBones() {
 		var selected = this.ResolveActorEntity();
 		if (selected == null)
@@ -305,6 +343,9 @@ public class LazyPoseComponents {
 
 	// Partial reference pose loading
 
+	/// <summary>
+	/// Sets everything but the current facial expression of an actor to the reference pose.
+	/// </summary>
 	public void SetPartialReference() {
 		// Early return if no ActorEntity or head/neck can't be selected.
 		if(this.ResolveActorEntity() is not ActorEntity selected) return;
@@ -340,6 +381,10 @@ public class LazyPoseComponents {
 
 	// Target resolving
 
+	/// <summary>
+	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
+	/// </summary>
+	/// <returns>Selected ActorEntity on success, null on failure.</returns>
 	private ActorEntity? ResolveActorEntity() {
 		// Resolves the parent actor entity of any bone. Recursion warning.
 		var selected = this._ctx.Selection.GetSelected().FirstOrDefault();
@@ -352,6 +397,13 @@ public class LazyPoseComponents {
 		return null;
 	}
 
+	/// <summary>
+	/// Recursive function for ResolveActorEntity()
+	/// </summary>
+	/// <param name="node">Current node</param>
+	/// <param name="depth">Current depth</param>
+	/// <param name="maxdepth">Max depth</param>
+	/// <returns>ActorEntity on success, null on failure.</returns>
 	private ActorEntity? Backtrack(object node, int depth = 0, int maxdepth = 0) {
 		// Recursion used in ResolveActorEntity.
 		if (node is ActorEntity ae)
@@ -428,6 +480,12 @@ public class LazyPoseComponents {
 
 	// Support functions
 
+	/// <summary>
+	/// Determines angles of a vector in 3 planes.
+	/// </summary>
+	/// <param name="u">Vector to deconstruct</param>
+	/// <param name="degrees">Return result in degrees</param>
+	/// <returns>Vector3 containing angles.</returns>
 	private Vector3 VectorAngles(Vector3 u, bool degrees = false) {
 		Vector3 len = new() {
 			X = MathF.Max(MathF.Sqrt(u.X * u.X + u.Z * u.Z), float.Epsilon),
