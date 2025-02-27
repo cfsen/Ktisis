@@ -74,11 +74,8 @@ public class LazyPoseComponents {
 	public void ResetGaze() {
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;
 		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
-		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
 		
 		this.SetEyesTransform(ae, eyes[0], eyes[1]);
-		
-		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	/// <summary>
@@ -87,12 +84,9 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtWorldTarget(){
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
-		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
 		
 		// Use set position from SetWorldGazeTarget as target
 		this.SetGaze(ae, this.TargetLookPosition);
-
-		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	/// <summary>
@@ -101,13 +95,10 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtCurrentCamera(){
 		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
-		var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
 
 		// Grab postion from current camera
 		if(this._ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
 		this.SetGaze(ae, target);
-
-		if(lastSelected != null) this._ctx.Selection.Select(lastSelected);
 	}
 
 	// Gaze logic 
@@ -150,11 +141,10 @@ public class LazyPoseComponents {
 			.ToList() is not List<SceneEntity> eyes || eyes.Count < 1
 			) return;
 		foreach(SceneEntity s in eyes) {
-			this._ctx.Selection.Select(s);
-			if(s.Name == "Left Eye" || s.Name == "Left Iris")
-				this.SetTransform(this._ctx.Transform.Target!, left);	// null handled in function
-			else if(s.Name == "Right Eye" || s.Name == "Right Iris")
-				this.SetTransform(this._ctx.Transform.Target!, right);
+			if((s.Name == "Left Eye" || s.Name == "Left Iris") && s is ITransform tl)
+				tl.SetTransform(left);
+			else if((s.Name == "Right Eye" || s.Name == "Right Iris")  && s is ITransform tr)
+				tr.SetTransform(right);
 		}
 	}
 	
@@ -208,13 +198,13 @@ public class LazyPoseComponents {
 	/// <param name="boneName">BoneNode.Name to search for</param>
 	/// <returns>Transform on success, null on failure.</returns>
 	private Transform? GetTransformByBoneName(ActorEntity ae, string boneName) {
-		SceneEntity? x = ae.Recurse().Where(x => x is BoneNode && x.Name == boneName)?.FirstOrDefault() ?? null;
+		SceneEntity? x = ae.Recurse()
+			.Where(x => x is BoneNode && x.Name == boneName)?
+			.FirstOrDefault() ?? null;
 		if (x == null) return null;
+		if(x is not ITransform t) return null;
 
-		this._ctx.Selection.Select(x);
-
-		if (this._ctx.Transform.Target?.GetTransform() is not Transform t) return null;
-		return t;
+		return t.GetTransform();
 	}
 
 	/// <summary>
