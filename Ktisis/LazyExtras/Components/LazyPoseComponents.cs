@@ -21,8 +21,11 @@ using Ktisis.Structs.Lights;
 
 using Lumina.Excel.Sheets;
 
+using Newtonsoft.Json.Linq;
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -109,23 +112,34 @@ public class LazyPoseComponents {
 	/// <param name="ae">ActorEntity to pose</param>
 	/// <param name="worldTarget">Point in world space for ActorEntity to look at</param>
 	private void SetGaze(ActorEntity ae, Vector3 worldTarget) {
+		/*
+		Using the head bone as a reference orientation, perform target and rotation
+		calculations in local space. Then transform the new orientation back into world
+		space. Transformations are calculated here, and set by SetEyesTransform().
+		 */
 		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
 		if(this.GetHeadOrientation(ae) is not Matrix4x4 orientation) return;
 
+		// Iterate over both eyes.
 		for(int i = 0; i < 2; i++) {
 			if(this.CalcWorldMatrices(eyes[i].Rotation, eyes[i].Position, out var wtd)) {
+				// Local space allows starting with an identity matrix
 				var id = Matrix4x4.Identity;
 				var target = Vector3.Transform(worldTarget, wtd.WorldToLocal);
 				var rot = this.VectorAngles(target);
-				id *= Matrix4x4.CreateFromYawPitchRoll(rot.X, 0.0f, rot.Z);
+
+				// TODO this is where any offsets would be added to yaw/pitch
+				// Yaw then pitch in local space. This prevents eyes rolling.
+				id *= Matrix4x4.CreateRotationY(rot.X);
+				id *= Matrix4x4.CreateRotationZ(rot.Z);
+
+				// Transform into world space orientation
 				id *= wtd.LocalToWorld_Rotation;
 				eyes[i].Rotation = Quaternion.CreateFromRotationMatrix(id);
-				// TODO this induces a slight roll around X on the eyes
-				// I have a fix for this in the deprecated code
-				// Might want to bake that into this, and expose it as an option
-				// Since it does make the gaze less accurate due to an offset
 			}
 		}
+
+		// Set the new transform.
 		this.SetEyesTransform(ae, eyes[0], eyes[1]);
 	} 
 
@@ -140,10 +154,11 @@ public class LazyPoseComponents {
 			.Where(x => x is BoneNode && (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
 			.ToList() is not List<SceneEntity> eyes || eyes.Count < 1
 			) return;
+
 		foreach(SceneEntity s in eyes) {
 			if((s.Name == "Left Eye" || s.Name == "Left Iris") && s is ITransform tl)
 				tl.SetTransform(left);
-			else if((s.Name == "Right Eye" || s.Name == "Right Iris")  && s is ITransform tr)
+			else if((s.Name == "Right Eye" || s.Name == "Right Iris") && s is ITransform tr)
 				tr.SetTransform(right);
 		}
 	}
@@ -174,10 +189,7 @@ public class LazyPoseComponents {
 	private List<Transform>? GetEyesCurrent(ActorEntity ae) {
 		if(this.GetTransformByBoneName(ae, "Left Eye") is not Transform left) return null;
 		if(this.GetTransformByBoneName(ae, "Right Eye") is not Transform right) return null;
-		List<Transform> l = new List<Transform>();
-		l.Add(left);
-		l.Add(right);
-		return l;
+		return [left, right];
 	}
 
 	/// <summary>
@@ -205,16 +217,6 @@ public class LazyPoseComponents {
 		if(x is not ITransform t) return null;
 
 		return t.GetTransform();
-	}
-
-	/// <summary>
-	/// Sets the transform of the currently selected target. This is cursed, but hey. It works.
-	/// </summary>
-	/// <param name="target">ctx.Transform.Target</param>
-	/// <param name="transform">Transform to set.</param>
-	private void SetTransform(ITransformTarget target, Transform transform) {
-		if (target == null) return;
-		target.SetTransform(transform);
 	}
 
 	/// <summary>
@@ -414,59 +416,62 @@ public class LazyPoseComponents {
 		}
 		return null;
 	}
-	
+
 	// Debug
 
 	private static void dp(string s) => Ktisis.Log.Debug(s); 
-	public void SelectEyeBall() {
-		var actor = this._ctx.Scene.Recurse().Where(x => x is ActorEntity).FirstOrDefault();
-		if(actor == null) return;
-		var eye = actor.Recurse().Where(x => x.Name == "Left Eye" && x is BoneNode).FirstOrDefault();
-		if(eye == null) return;
-		this._ctx.Selection.Select(eye);
-	}
+	//public void SelectEyeBall() {
+	//	var actor = this._ctx.Scene.Recurse().Where(x => x is ActorEntity).FirstOrDefault();
+	//	if(actor == null) return;
+	//	var eye = actor.Recurse().Where(x => x.Name == "Left Eye" && x is BoneNode).FirstOrDefault();
+	//	if(eye == null) return;
+	//	this._ctx.Selection.Select(eye);
+	//}
 
 	// M4 helpers
 
-	public void dbgCsM4() {
-		this.DrawM4Table(this._dbgM4, "FIRST");
-		//ImGui.Text(this.dbgV3(this._dbgM4.Translation));
-		this.DrawM4Table(this._dbgM4_2, "SECOND");
-		//ImGui.Text(this.dbgV3(this._dbgM4_2.Translation));
-		this.DrawM4Table(this._dbgM4_3, "THIRD");
-		//ImGui.Text(this.dbgV3(this._dbgM4_3.Translation));
-		this.DrawM4Table(this._dbgM4_2, "FOURTH");
-	}
+	// // TODO saved for future debug
+	//public void dbgCsM4() {
+	//	this.DrawM4Table(this._dbgM4, "FIRST");
+	//	//ImGui.Text(this.dbgV3(this._dbgM4.Translation));
+	//	this.DrawM4Table(this._dbgM4_2, "SECOND");
+	//	//ImGui.Text(this.dbgV3(this._dbgM4_2.Translation));
+	//	this.DrawM4Table(this._dbgM4_3, "THIRD");
+	//	//ImGui.Text(this.dbgV3(this._dbgM4_3.Translation));
+	//	this.DrawM4Table(this._dbgM4_2, "FOURTH");
+	//}
 
-	public void dbgMatrixInspector(string bone) {
-		if(this.ResolveActorEntity() is not ActorEntity ae) return;
-		if(ae.Recurse().Where(x => x.Name == bone && x is BoneNode).FirstOrDefault() is not BoneNode bn) return;
-		var m = Matrix4x4.CreateFromQuaternion(Quaternion.Normalize(bn.GetTransform()?.Rotation ?? Quaternion.Identity));
-		//dp(m[0,0].ToString());
-		//dp(m.ToString());
-		//dp("Okay");
-		this.DrawM4Table(m, bn.Name);
-		Matrix4x4 mi = new Matrix4x4();
-		if(Matrix4x4.Invert(m, out mi)) {
-			this.DrawM4Table(mi, bn.Name + "(inv)");
-			this.DrawM4Table(Matrix4x4.Multiply(m, mi), "A*A^-1");
-		}
+	//// Saved for future debug
+	//public void dbgMatrixInspector(string bone) {
+	//	if(this.ResolveActorEntity() is not ActorEntity ae) return;
+	//	if(ae.Recurse().Where(x => x.Name == bone && x is BoneNode).FirstOrDefault() is not BoneNode bn) return;
+	//	var m = Matrix4x4.CreateFromQuaternion(Quaternion.Normalize(bn.GetTransform()?.Rotation ?? Quaternion.Identity));
+	//	//dp(m[0,0].ToString());
+	//	//dp(m.ToString());
+	//	//dp("Okay");
+	//	this.DrawM4Table(m, bn.Name);
+	//	Matrix4x4 mi = new Matrix4x4();
+	//	if(Matrix4x4.Invert(m, out mi)) {
+	//		this.DrawM4Table(mi, bn.Name + "(inv)");
+	//		this.DrawM4Table(Matrix4x4.Multiply(m, mi), "A*A^-1");
+	//	}
 
-	}
+	//}
 
-	private void DrawM4Table(Matrix4x4 m, string lbl) {
-		ImGui.Text(lbl);
-		if(ImGui.BeginTable($"{lbl}###{lbl}", 4)) {
-			int i = 0, r = 0, c = 0;
-			for(i = 0; i < 16; i++) {
-				ImGui.TableNextColumn();
-				ImGui.Text(m[r,c].ToString());
-				if(c == 3) { r++; c=0; }
-				else c++;
-			}
-			ImGui.EndTable();
-		}
-	}
+	//// Saved for future debug
+	//private void DrawM4Table(Matrix4x4 m, string lbl) {
+	//	ImGui.Text(lbl);
+	//	if(ImGui.BeginTable($"{lbl}###{lbl}", 4)) {
+	//		int i = 0, r = 0, c = 0;
+	//		for(i = 0; i < 16; i++) {
+	//			ImGui.TableNextColumn();
+	//			ImGui.Text(m[r,c].ToString());
+	//			if(c == 3) { r++; c=0; }
+	//			else c++;
+	//		}
+	//		ImGui.EndTable();
+	//	}
+	//}
 
 	// Support functions
 
@@ -535,173 +540,4 @@ public class LazyPoseComponents {
 	private float DegToRad(float deg) {
 		return (float)(deg * Math.PI / 180);
 	}
-
-	// #############
-	// # Deprecated begins
-	// #############
-	//private void SetGazeToPosition(Vector3? targetOverride = null) {
-	//	if (this._ctx.Transform.Target == null || this._ctx.Cameras.Current == null)
-	//		return;
-
-	//	if (this.CalcCameraPosition() is not Vector3 currentCam) return;
-	//	currentCam += this._ctx.Cameras.Current?.RelativeOffset ?? Vector3.Zero;
-
-	//	// Override for non-camera target
-	//	if (targetOverride != null)
-	//		currentCam = targetOverride.Value;
-
-	//	// Fetch current state of target
-	//	var target = this._ctx.Transform.Target;
-	//	Transform selectedBone = target?.GetTransform() ?? new Transform();
-
-	//	// Buffer changes 
-	//	Transform tmp = selectedBone;
-	//	tmp.Rotation = this.CalcGazeToPosition(selectedBone, currentCam, targetOverride != null);
-
-	//	// Update transform
-	//	target?.SetTransform(tmp);
-	//}
-	//public void LookAtCamera(Vector3? targetOverride = null) {
-	//	// Store state of UI selection
-	//	var lastSelected = this._ctx.Selection.GetSelected().FirstOrDefault();
-
-	//	// Recurse and find parent ActorEntity
-	//	var selected = this.ResolveActorEntity();
-	//	if (selected == null)
-	//		return;
-
-	//	// Recurses through the actor to find the eyes.
-	//	// TODO This is localization dependant
-	//	// TODO recursing through the entire actor is redundant
-	//	foreach (SceneEntity s in selected.Recurse().Where(s => s.Type == EntityType.BoneNode))	{
-	//		if (s.Name == "Left Eye" || s.Name == "Right Eye") {
-	//			this._ctx.Selection.Select(s);
-	//			this.SetGazeToPosition(targetOverride);
-	//		}
-	//	}
-
-	//	// Return state of selected UI element
-	//	if (lastSelected != null)
-	//		this._ctx.Selection.Select(lastSelected);
-	//}
-	//private Quaternion CalcGazeToPosition(Transform eye, Vector3 targetPosition, bool targetOverride) {
-	//	//return this.CalcGazeToPosition2(eye, targetPosition, targetOverride) ?? Quaternion.Identity;
-	//	// TODO This kinda works most of the time, but it's hacky.
-		
-	//	// Create a billboard for initial orientation 
-	//	Matrix4x4 billboard = Matrix4x4.CreateBillboard(eye.Position, targetPosition, Vector3.UnitY, Vector3.UnitX);
-	//	// Correct rotation around Y axis
-	//	Matrix4x4 yflip = Matrix4x4.CreateRotationY(this.DegToRad(90.0f));
-	//	billboard = Matrix4x4.Multiply(yflip, billboard);
-
-	//	// Reorients any X-rotation that might have happened. 
-	//	Matrix4x4 xflip = Matrix4x4.CreateRotationX(this.DegToRad(HkaEulerAngles.ToEuler(eye.Rotation).X));
-	//	billboard = Matrix4x4.Multiply(xflip, billboard);
-
-	//	return Quaternion.CreateFromRotationMatrix(billboard);
-	//}
-	//private Quaternion? CalcGazeToPosition2(Transform eye, Vector3 targetPosition, bool targetOverride, float maxRotationAngle = 99.0f) {
-	//	/*
-		 
-	//	You need to be able to transform the eye quaternion back to an identity state
-	//	Then back to it's intended location with a new rotation
-
-	//	Meaning:
-	//	p = position vector
-	//	r = rotation matrix from quaternion
-	//	Pmi = Position matrix inverse
-	//	Pm = Position matrix
-	//	Rmi = Rotation matrix inverse
-	//	Rm = Rotationmatrix
-
-	//	--- Set eyes to neutral, forward facing ---
-	//	Means needing some way of determining what a neutral rotation (looking straight forward) looks like.
-	//	You need to look at the orientation of a bone which has a static position in the eyes local space
-	//	The head seems like a good candidate
-	//		>>> Its orientation appears to be transferrable without any additional work
-		
-
-	//	Steps:
-	//	p * Pmi -> Brings p to origin
-	//	r * Rmi -> Brings r to identity
-	//	--- you can do local space rotations now, on anything that's been brought into local space ---
-	//		r * (arbitrary rotation) || (r*Rm for target)
-	//	p * Pm -> reverses move to origin
-
-
-	//	 */
-	//	dp("##########");
-	//	// Build matrix for world->local space
-	//	Matrix4x4 m = Matrix4x4.CreateFromQuaternion(eye.Rotation);
-	//	this._dbgM4 = m;
-	//	//Matrix4x4 m = Matrix4x4.Identity;
-	//	m *= Matrix4x4.CreateTranslation(eye.Position);
-	//	//m *= Matrix4x4.CreateTranslation(-eye.Position);
-	//	//m *= Matrix4x4.CreateFromQuaternion(eye.Rotation);
-	//	this._dbgM4_2 = m;
-
-	//	dp("eye.Pos: " + eye.Position.ToString());
-	//	dp("targetPosition: " + targetPosition.ToString());
-	//	dp("targetPosition*m: " + Vector3.Transform(targetPosition, m).ToString());
-	//	//dp(Vector3.Transform(targetPosition, m).ToString());
-
-	//	Matrix4x4 eyeWorldM4 = Matrix4x4.CreateFromQuaternion(eye.Rotation);
-
-	//	if (!Matrix4x4.Invert(eyeWorldM4, out Matrix4x4 eyeWorldM4Inv)) return null;
-	//	if (!Matrix4x4.Invert(m, out Matrix4x4 mi)) return null;
-
-	//	dp("targetPosition*m*mi: " + Vector3.Transform(Vector3.Transform(targetPosition, m), mi).ToString());
-	//	dp("eye.Position*mi: " + Vector3.Transform(eye.Position, mi).ToString()); // <<< THIS IS THE SANITY CHECK, you must be able to "return" the eye to origo
-
-	//	Vector3 u = Vector3.Transform(targetPosition, m);
-	//	float yaw = MathF.Atan2(u.X, u.Z);
-	//	float pitch = MathF.Atan2(u.Z, u.Y);
-
-	//	dp("yaw: " + yaw.ToString() + "|" + this.RadToDeg(yaw).ToString());
-	//	dp("pitch: " + pitch.ToString() +" | "+ this.RadToDeg(pitch).ToString());
-
-
-
-	//	//Vector3 v = targetPosition - eye.Position;
-	//	//Vector3 vl = Vector3.Transform(v, eyeWorldM4);
-	//	//dp(Vector3.Transform(vl, m).ToString());
-
-
-	//	/*
-		 
-	//	Starting from an identity works as intended, the rotation done on localTransform is as desired.
-	//	Bringing it back into world space works as intended.
-
-	//	The problem is getting the angles to the point in world space in the first place. 
-
-	//	This implementation doesn't really work.
-
-	//	Need to verify that:
-	//	- The point in local space is as intended
-	//	- The approach to calculating the angle is correct.
-		 
-	//	 */
-
-	//	float xzlen = u.X * u.X + u.Z * u.Z;
-	//	float yzlen = u.Y * u.Y + u.Z * u.Z;
-	//	float xylen = u.X * u.X + u.Y * u.Y;
-	//	//float yaw = u.X / xzlen; // XZ-plane maps to rotation around Y axis, yaw = cos(x) || sin(z)
-	//	//float pitch = u.Z / yzlen; // YZ-plane maps to rotation around X axis, pitch = cos(z) || sin(y)
-	//	//float roll = u.Y / xylen; // XY-plane mapts to rotation around Z axis, roll = cos(x) || sin(y)
-
-	//	//dp("Yaw: " + yaw.ToString() + " | deg:" + this.RadToDeg(yaw).ToString());
-	//	//dp("Pitch: " + pitch.ToString() + " | deg:" + this.RadToDeg(pitch).ToString());
-	//	dp("^^^^^^^^^");
-
-	//	return eye.Rotation;
-	//	Matrix4x4 localTransform = Matrix4x4.Identity;
-	//	//localTransform = Matrix4x4.Multiply(localTransform, Matrix4x4.CreateFromYawPitchRoll(MathF.PI/16, 0.0f, MathF.PI/16));
-	//	localTransform = Matrix4x4.Multiply(localTransform, Matrix4x4.CreateFromYawPitchRoll(yaw, 0.0f, pitch)); // Intentional placement of yaw/pitch
-	//	//this._dbgM4 = localTransform;
-	//	Quaternion qr = Quaternion.CreateFromRotationMatrix(Matrix4x4.Multiply(localTransform, eyeWorldM4)); // Bring local transforms into world space
-	//	return Quaternion.Normalize(qr);
-	//}
-	// #############
-	// # Deprecated ends
-	// #############
 }

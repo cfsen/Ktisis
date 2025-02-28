@@ -77,7 +77,7 @@ public class LazyPose :KtisisWindow {
 		//ImGui.SameLine();
 		//if (ImGui.Button("Eye"))
 		//	this._components.SelectEyeBall();
-		//ImGui.Separator();
+		ImGui.Separator();
 		//this._components.dbgMatrixInspector("Left Eye");
 		//this._components.dbgMatrixInspector("Right Eye");
 		//this._components.dbgCsM4();
