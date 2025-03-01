@@ -126,9 +126,11 @@ public class LazyPoseComponents {
 				// Local space allows starting with an identity matrix
 				var id = Matrix4x4.Identity;
 				var target = Vector3.Transform(worldTarget, wtd.WorldToLocal);
-				var rot = this.VectorAngles(target);
+				var rot = VectorAngles(target);
 
-				// TODO this is where any offsets would be added to yaw/pitch
+				// Limit eye rotation
+				this.EyesAngleClamp(ref rot);
+
 				// Yaw then pitch in local space. This prevents eyes rolling.
 				id *= Matrix4x4.CreateRotationY(rot.X);
 				id *= Matrix4x4.CreateRotationZ(rot.Z);
@@ -144,6 +146,20 @@ public class LazyPoseComponents {
 	} 
 
 	/// <summary>
+	/// Limits rotation of eyes
+	/// </summary>
+	/// <param name="rot">Result from VectorAngles()</param>
+	private void EyesAngleClamp(ref Vector3 rot) {
+		//dp($"{rot.X*180/MathF.PI} / {rot.Y*180/MathF.PI} / {rot.Z*180/MathF.PI}");
+		float eyeMaxYaw = this.DegToRad(42.0f);
+		float eyeMinYaw = this.DegToRad(-36.0f);
+		float eyeMaxPitch = this.DegToRad(24.0f);
+		float eyeMinPitch = this.DegToRad(-42.0f);
+		rot.X = Math.Clamp(rot.X, eyeMinYaw, eyeMaxYaw);
+		rot.Z = Math.Clamp(rot.Z, eyeMinPitch, eyeMaxPitch);
+	}
+
+	/// <summary>
 	/// Sets the orientation of the eyes for an ActorEntity
 	/// </summary>
 	/// <param name="ae">ActorEntity to operate on</param>
@@ -151,8 +167,10 @@ public class LazyPoseComponents {
 	/// <param name="right">Transform for the right eye</param>
 	private void SetEyesTransform(ActorEntity ae, Transform left, Transform right) {
 		if(ae.Recurse()
-			.Where(x => x is BoneNode && (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
-			.ToList() is not List<SceneEntity> eyes || eyes.Count < 1
+			.Where(x => x is BoneNode 
+			&& (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
+			.ToList() 
+			is not List<SceneEntity> eyes || eyes.Count < 1
 			) return;
 
 		foreach(SceneEntity s in eyes) {
@@ -481,28 +499,28 @@ public class LazyPoseComponents {
 	/// <param name="u">Vector to deconstruct</param>
 	/// <param name="degrees">Return result in degrees</param>
 	/// <returns>Vector3 containing angles.</returns>
-	private Vector3 VectorAngles(Vector3 u, bool degrees = false) {
+	private static Vector3 VectorAngles(Vector3 u, bool degrees = false) {
 		Vector3 len = new() {
 			X = MathF.Max(MathF.Sqrt(u.X * u.X + u.Z * u.Z), float.Epsilon),
 			Y = MathF.Max(MathF.Sqrt(u.Y * u.Y + u.Z * u.Z), float.Epsilon),
 			Z = MathF.Max(MathF.Sqrt(u.X * u.X + u.Y * u.Y), float.Epsilon)
 		};
 
-		Vector3 s = new() {X=MathF.Sign(u.X), Y=MathF.Sign(u.Y), Z=MathF.Sign(u.Z)};
+		Vector3 s = new() {X=float.Sign(u.X), Y=float.Sign(u.Y), Z=float.Sign(u.Z)};
 
 		//dp("u=" + u.ToString());
 		//dp("s= " + s.ToString());
 
-		// Determine which quadrant is being targeted
-		int[] quad = [0,0,0,0];	// Quad 1,2,3,4
+		//// Determine which quadrant is being targeted. Left for debug purposes.
+		//int[] quad = [0,0,0,0]; // Quad 1,2,3,4
 
-		if(s.Y >= 0 && s.Z >= 0)		quad[0] = quad[0] ^ 1;	// Quad 1
-		else if(s.Y >= 0 && s.Z < 0)	quad[1] = quad[1] ^ 1;	// Quad 2
-		else if(s.Y < 0 && s.Z < 0)		quad[2] = quad[2] ^ 1;	// Quad 3
-		else if(s.Y < 0 && s.Z >= 0)	quad[3] = quad[3] ^ 1;	// Quad 4
+		//if(s.Y >= 0 && s.Z >= 0)		quad[0] ^= 1;	// Quad 1
+		//else if(s.Y >= 0 && s.Z < 0)	quad[1] ^= 1;	// Quad 2
+		//else if(s.Y < 0 && s.Z < 0)		quad[2] ^= 1;	// Quad 3
+		//else if(s.Y < 0 && s.Z >= 0)	quad[3] ^= 1;	// Quad 4
 
-		// All X<0 are invalid, TODO this should be handled better
-		if(s.X < 0) quad = [0,0,0,0];
+		//// All X<0 are invalid, TODO this should be handled better
+		//if(s.X < 0) quad = [0,0,0,0];
 
 		//dp($"quad: [{string.Join(", ", quad)}]");
 
@@ -514,20 +532,22 @@ public class LazyPoseComponents {
 		};
 
 		// Adjust for quad
-		if(quad[0] == 1 || quad[3] == 1) {
-			o.X = -o.X;
-		}
-		if(quad[3] == 1 || quad[2] == 1) {
-			o.Z = -o.Z;
+		if((s.Y >= 0 && s.Z >= 0) || (s.Y < 0 && s.Z >= 0))
+			o.X *= -1.0f;
+		if((s.Y < 0 && s.Z >= 0) || (s.Y < 0 && s.Z < 0))
+			o.Z *= -1.0f;
+		if(s.X < 0) {
+			o.X += MathF.PI;
+			o.X *= -1.0f;
 		}
 
-		// TODO angle clamping here
+		//dp($"Y: {o.X*180/MathF.PI} P: {o.Y*180/MathF.PI} R: {o.Z*180/MathF.PI}");
 
 		// Conversion
 		if (degrees) {
-			o.X = o.X * 180 / MathF.PI;
-			o.Y = o.Y * 180 / MathF.PI;
-			o.Z = o.Z * 180 / MathF.PI;
+			o.X *= 180 / MathF.PI;
+			o.Y *= 180 / MathF.PI;
+			o.Z *= 180 / MathF.PI;
 		}
 
 		return o;
