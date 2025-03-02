@@ -13,6 +13,7 @@ using Ktisis.Editor.Transforms;
 using Ktisis.Editor.Transforms.Types;
 using Ktisis.Interface;
 using Ktisis.Interface.Editor.Types;
+using Ktisis.LazyExtras;
 using Ktisis.Localization;
 using Ktisis.Scene.Types;
 using Ktisis.Services.Game;
@@ -72,6 +73,7 @@ public class EditorContext : IEditorContext {
 	public ISceneManager Scene => this.State.Scene;
 	public ISelectManager Selection => this.State.Selection;
 	public ITransformHandler Transform => this.State.Transform;
+	public LazyBase LazyExtras => this.State.LazyExtras;
 	
 	public void Initialize() => this._state?.Initialize();
 	public void Update() => this._state?.Update();

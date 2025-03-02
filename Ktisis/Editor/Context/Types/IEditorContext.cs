@@ -10,6 +10,7 @@ using Ktisis.Editor.Posing.Types;
 using Ktisis.Editor.Selection;
 using Ktisis.Editor.Transforms.Types;
 using Ktisis.Interface.Editor.Types;
+using Ktisis.LazyExtras;
 using Ktisis.Localization;
 using Ktisis.Scene.Types;
 
@@ -34,6 +35,7 @@ public interface IEditorContext : IDisposable {
 	public ISceneManager Scene { get; }
 	public ISelectManager Selection { get; }
 	public ITransformHandler Transform { get; }
+	public LazyBase LazyExtras { get; }
 
 	public void Initialize();
 	public void Update();
