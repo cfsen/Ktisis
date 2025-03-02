@@ -10,6 +10,7 @@ using Ktisis.Editor.Selection;
 using Ktisis.Editor.Transforms.Types;
 using Ktisis.Interface.Editor.Types;
 using Ktisis.Interop.Hooking;
+using Ktisis.LazyExtras;
 using Ktisis.Scene.Types;
 
 namespace Ktisis.Editor;
@@ -29,6 +30,7 @@ public class EditorState : IDisposable {
 	public required ISceneManager Scene { get; init; }
 	public required ISelectManager Selection { get; init; }
 	public required ITransformHandler Transform { get; init; }
+	public required LazyBase LazyExtras { get; init; }
     
 	public EditorState(
 		IEditorContext context,
