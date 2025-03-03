@@ -44,7 +44,8 @@ public class EditorInterface : IEditorInterface {
 
 	public void Prepare() {
 		if (this._ctx.Config.Editor.OpenOnEnterGPose)
-			this._gui.GetOrCreate<WorkspaceWindow>(this._ctx).Open();
+			this._gui.GetOrCreate<LazyImgui>(this._ctx).Open();
+			//this._gui.GetOrCreate<WorkspaceWindow>(this._ctx).Open();
 
 		this._gizmo.Initialize();
 		this._gui.GetOrCreate<OverlayWindow>(
