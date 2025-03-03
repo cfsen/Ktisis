@@ -1,35 +1,17 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI;
-
-using ImGuiNET;
-
-using JetBrains.Annotations;
-
-using Ktisis.Common.Utility;
-using Ktisis.Data.Json;
+﻿using Ktisis.Common.Utility;
 using Ktisis.Editor.Camera.Types;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Posing.Data;
-using Ktisis.Editor.Posing.Types;
-using Ktisis.Editor.Transforms.Types;
 using Ktisis.Scene.Decor;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.Skeleton;
-using Ktisis.Scene.Entities.World;
 using Ktisis.Scene.Types;
-using Ktisis.Structs.Lights;
-
-using Lumina.Excel.Sheets;
-
-using Newtonsoft.Json.Linq;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ktisis.LazyExtras.Components;
 
@@ -48,13 +30,13 @@ public class LazyPoseComponents {
 	private readonly IEditorContext _ctx;
 	public Vector3 TargetLookPosition = Vector3.Zero;
 
-	private Matrix4x4 _dbgM4 = Matrix4x4.Identity;
-	private Matrix4x4 _dbgM4_2 = Matrix4x4.Identity;
-	private Matrix4x4 _dbgM4_3 = Matrix4x4.Identity;
-	private Matrix4x4 _dbgM4_4 = Matrix4x4.Identity;
+	//private Matrix4x4 _dbgM4 = Matrix4x4.Identity;
+	//private Matrix4x4 _dbgM4_2 = Matrix4x4.Identity;
+	//private Matrix4x4 _dbgM4_3 = Matrix4x4.Identity;
+	//private Matrix4x4 _dbgM4_4 = Matrix4x4.Identity;
 
 	// Pre-emptive implementation of an offset angle to apply when using head orientation for neutral gaze
-	private float _neutralEyeHeadOffset = 0.0f;
+	public float neutralEyeHeadOffset = 0.0f;
 
 	public LazyPoseComponents(IEditorContext ctx) {
 		this._ctx = ctx;
@@ -166,19 +148,21 @@ public class LazyPoseComponents {
 	/// <param name="left">Transform for the left eye</param>
 	/// <param name="right">Transform for the right eye</param>
 	private void SetEyesTransform(ActorEntity ae, Transform left, Transform right) {
-		if(ae.Recurse()
-			.Where(x => x is BoneNode 
-			&& (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
-			.ToList() 
-			is not List<SceneEntity> eyes || eyes.Count < 1
-			) return;
+		this._ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
+			if(ae.Recurse()
+				.Where(x => x is BoneNode 
+				&& (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
+				.ToList() 
+				is not List<SceneEntity> eyes || eyes.Count < 1
+				) return;
 
-		foreach(SceneEntity s in eyes) {
-			if((s.Name == "Left Eye" || s.Name == "Left Iris") && s is ITransform tl)
-				tl.SetTransform(left);
-			else if((s.Name == "Right Eye" || s.Name == "Right Iris") && s is ITransform tr)
-				tr.SetTransform(right);
-		}
+			foreach(SceneEntity s in eyes) {
+				if((s.Name == "Left Eye" || s.Name == "Left Iris") && s is ITransform tl)
+					tl.SetTransform(left);
+				else if((s.Name == "Right Eye" || s.Name == "Right Iris") && s is ITransform tr)
+					tr.SetTransform(right);
+			}
+		});
 	}
 	
 	/// <summary>
@@ -192,7 +176,7 @@ public class LazyPoseComponents {
 		// This is the groundwork for orienting the eyes to other directions
 		Quaternion neutral = Quaternion.CreateFromRotationMatrix(head);
 		// The head bone orientation is almost perfectly oriented for a neutral gaze, but is rotated 180* around X.
-		neutral *= Quaternion.CreateFromYawPitchRoll(0.0f, MathF.PI+this._neutralEyeHeadOffset, 0.0f);
+		neutral *= Quaternion.CreateFromYawPitchRoll(0.0f, MathF.PI+this.neutralEyeHeadOffset, 0.0f);
 		// The eyes are now neutral. Any orientation needs to happen after this.
 		foreach(Transform eye in eyes) 
 			eye.Rotation = neutral;
@@ -366,27 +350,29 @@ public class LazyPoseComponents {
 			.Where(x => x.Name == "Head" && x is not BoneNodeGroup)
 			.FirstOrDefault() is not SceneEntity head) return;
 
-		// Save current and set reference pose
-		var epc = new EntityPoseConverter(selected.Pose!);
-		var org = epc.Save();
-		epc.LoadReferencePose();
-		var fin = epc.Save();
+		this._ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
+			// Save current and set reference pose
+			var epc = new EntityPoseConverter(selected.Pose!);
+			var org = epc.Save();
+			epc.LoadReferencePose();
+			var fin = epc.Save();
 
-		// Load the original expression by loading bones from the head BoneNodeGroup 
-		this._ctx.Selection.Select(neck);
-		var gsb = epc.GetSelectedBones(false).ToList();
-		epc.LoadSelectedBones(org, PoseTransforms.Position | PoseTransforms.Rotation);
+			// Load the original expression by loading bones from the head BoneNodeGroup 
+			this._ctx.Selection.Select(neck);
+			var gsb = epc.GetSelectedBones(false).ToList();
+			epc.LoadSelectedBones(org, PoseTransforms.Position | PoseTransforms.Rotation);
 
-		// Set the the neck bones back to reference pose 
-		// Note: Passing both flags at once does not produce the same result
-		epc.LoadBones(fin, gsb, PoseTransforms.Position);
-		epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
+			// Set the the neck bones back to reference pose 
+			// Note: Passing both flags at once does not produce the same result
+			epc.LoadBones(fin, gsb, PoseTransforms.Position);
+			epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
 
-		// Rotate the head back into position
-		// Change selection to head bone and rotate it to reference pose
-		this._ctx.Selection.Select(head);
-		gsb = epc.GetSelectedBones(false).ToList();
-		epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
+			// Rotate the head back into position
+			// Change selection to head bone and rotate it to reference pose
+			this._ctx.Selection.Select(head);
+			gsb = epc.GetSelectedBones(false).ToList();
+			epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
+		});
 	}
 
 	// Target resolving

@@ -22,7 +22,7 @@ public class LazyPose :KtisisWindow {
 		IEditorContext ctx
 	) : base("Lazy pose") {
 		this._ctx = ctx;
-		this._components = new LazyPoseComponents(ctx);
+		this._components = this._ctx.LazyExtras.pose;
 	}
 
 	public override void PreOpenCheck() {
@@ -81,5 +81,40 @@ public class LazyPose :KtisisWindow {
 		//this._components.dbgMatrixInspector("Left Eye");
 		//this._components.dbgMatrixInspector("Right Eye");
 		//this._components.dbgCsM4();
+	}
+
+	public static bool Joystick(string label, ref Vector2 output, float radius = 50.0f) {
+		Vector2 cursorPos = ImGui.GetCursorScreenPos();
+		Vector2 center = cursorPos + new Vector2(radius, radius);
+
+		ImGui.InvisibleButton(label, new Vector2(radius * 2, radius * 2));
+
+		bool isActive = ImGui.IsItemActive();
+		bool isHovered = ImGui.IsItemHovered();
+		Vector2 dragOffset = ImGui.GetMouseDragDelta(0, 0.0f);
+		float dragLength = dragOffset.Length();
+
+		if (isActive)
+		{
+			if (dragLength > radius) // Clamp to joystick boundary
+			{
+				dragOffset = Vector2.Normalize(dragOffset) * radius;
+			}
+			output = dragOffset / radius;
+		} else if (!isHovered)
+		{
+			output = Vector2.Zero; // Reset when released
+		}
+
+		// Draw background circle
+		var drawList = ImGui.GetWindowDrawList();
+		drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(new Vector4(0.2f, 0.2f, 0.2f, 1.0f)), 32);
+		drawList.AddCircle(center, radius, ImGui.GetColorU32(new Vector4(1.0f, 1.0f, 1.0f, 1.0f)), 32);
+
+		// Draw moving joystick
+		Vector2 knobPos = center + output * radius;
+		drawList.AddCircleFilled(knobPos, 10.0f, ImGui.GetColorU32(new Vector4(1.0f, 0.0f, 0.0f, 1.0f)), 16);
+
+		return isActive;
 	}
 }
