@@ -219,4 +219,8 @@ public class EditorInterface : IEditorInterface {
 		var gizmo = this._gizmo.Create(GizmoId.LazyGizmo);
 		this._gui.GetOrCreate<LazyCamera>(this._ctx, this._gui, new Gizmo2D(gizmo, true, 0.8f)).Toggle();
 	}
+	public void ToggleLazyPose() {
+		var gizmo = this._gizmo.Create(GizmoId.LazyGizmo);
+		this._gui.GetOrCreate<LazyPose>(this._ctx).Toggle();
+	}
 }
