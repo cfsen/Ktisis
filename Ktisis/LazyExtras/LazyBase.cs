@@ -7,6 +7,7 @@ using ImGuiNET;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Selection;
 using Ktisis.Interface.Windows;
+using Ktisis.LazyExtras.Components;
 using Ktisis.LazyExtras.Interfaces;
 using Ktisis.LazyExtras.UI.Widgets;
 
@@ -34,9 +35,15 @@ namespace Ktisis.LazyExtras;
 public class LazyBase {
 	//public List<ILazyWidget> Widgets { get; set; }
 	public LazyUiSizes Sizes;
+	public IFramework fw;
+
+	public LazyPoseComponents pose;
+
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.Sizes = new();
+		this.fw = fw;
+		this.pose = new(ctx);
 	}
 
 	//private void Initialize(IEditorContext ctx) {
