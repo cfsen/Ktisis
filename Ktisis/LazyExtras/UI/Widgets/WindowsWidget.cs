@@ -34,11 +34,11 @@ class WindowsWidget :ILazyWidget {
 		if(ctx.LazyExtras.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLightEditor", uis.BtnSmall))
 			dp("Light editor");
 		if (lb.BtnIcon(FontAwesomeIcon.Passport, "OpenCharacterEditor", uis.BtnSmall))
-			ctx.Interface.OpenPosingWindow();
+			ctx.Interface.TogglePosingWindow();
 		if (lb.BtnIcon(FontAwesomeIcon.Camera, "OpenCameraEditor", uis.BtnSmall))
-			ctx.Interface.OpenCameraWindow();
+			ctx.Interface.ToggleCameraWindow();
 		if (lb.BtnIcon(FontAwesomeIcon.SyncAlt, "OpenTransformEditor", uis.BtnSmall))
-			ctx.Interface.OpenTransformWindow();
+			ctx.Interface.ToggleTransformWindow();
 	}
 	private static void dp(string s) {
 		Ktisis.Log.Debug(s);
