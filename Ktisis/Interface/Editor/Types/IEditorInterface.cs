@@ -58,5 +58,6 @@ public interface IEditorInterface {
 	public void ExportPoseFile(PoseFile file);
 
 	// Lazy extras
+	public void ToggleLazyPose();
 	public void ToggleLazyCamera();
 }
