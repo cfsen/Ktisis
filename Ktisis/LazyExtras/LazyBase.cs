@@ -33,48 +33,40 @@ namespace Ktisis.LazyExtras;
  * 
  * */
 public class LazyBase {
-	//public List<ILazyWidget> Widgets { get; set; }
-	public LazyUiSizes Sizes;
+	//public LazyUiSizes Sizes;
 	public IFramework fw;
 
 	public LazyPoseComponents pose;
 
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw) {
 		Ktisis.Log.Debug("LazyBase init");
-		this.Sizes = new();
+		//this.Sizes = new();
 		this.fw = fw;
 		this.pose = new(ctx);
 	}
 
-	//private void Initialize(IEditorContext ctx) {
-	//	this.Widgets = [
-	//		//new DemoWidget(),
-	//		new ActorSelectWidget(ctx),
-	//		new WindowsWidget(ctx)
-	//		];
+	//public bool BtnIcon(FontAwesomeIcon icon, string id, Vector2 size, string tooltip) {
+	//	// TODO disabled due to some shenanigans with them ending up earlier than they should
+	//	//if (ImGui.IsItemHovered())
+	//		//using (var _tip = ImRaii.Tooltip()) {
+	//		//	ImGui.Text(tooltip);
+	//		//};
+	//	using var _ = ImRaii.PushFont(UiBuilder.IconFont);
+	//	return ImGui.Button($"{icon.ToIconString()}###{id}", new(size.X*Sizes.Scale, size.Y*Sizes.Scale));
 	//}
-
-	public bool BtnIcon(FontAwesomeIcon icon, string id, Vector2 size) {
-		if (ImGui.IsItemHovered())
-			using (var _tip = ImRaii.Tooltip()) {
-				ImGui.Text("Tooltip!");
-			};
-		using var _ = ImRaii.PushFont(UiBuilder.IconFont);
-		return ImGui.Button($"{icon.ToIconString()}###{id}", new(size.X*Sizes.Scale, size.Y*Sizes.Scale));
-	}
 }
 
 // Used for scalable UI in LazyImgui and LazyWidgets
-public struct LazyUiSizes {
-	public Vector2 BtnSmall;
-	public Vector2 BtnBig;
-	public Vector2 Space;
-	public float Scale;
+//public struct LazyUiSizes {
+//	public Vector2 BtnSmall;
+//	public Vector2 BtnBig;
+//	public Vector2 Space;
+//	public float Scale;
 
-	public LazyUiSizes() {
-		this.BtnSmall = new(37, 37);
-		this.BtnBig = new(79, 79);
-		this.Space = new(5, 5);
-		this.Scale = 1.0f;
-	}
-}
+//	public LazyUiSizes() {
+//		this.BtnSmall = new(37, 37);
+//		this.BtnBig = new(79, 79);
+//		this.Space = new(5, 5);
+//		this.Scale = 1.0f;
+//	}
+//}
