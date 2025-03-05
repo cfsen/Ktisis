@@ -485,7 +485,7 @@ public class LazyPoseComponents {
 	/// <param name="u">Vector to deconstruct</param>
 	/// <param name="degrees">Return result in degrees</param>
 	/// <returns>Vector3 containing angles.</returns>
-	private static Vector3 VectorAngles(Vector3 u, bool degrees = false) {
+	public static Vector3 VectorAngles(Vector3 u, bool degrees = false) {
 		Vector3 len = new() {
 			X = MathF.Max(MathF.Sqrt(u.X * u.X + u.Z * u.Z), float.Epsilon),
 			Y = MathF.Max(MathF.Sqrt(u.Y * u.Y + u.Z * u.Z), float.Epsilon),

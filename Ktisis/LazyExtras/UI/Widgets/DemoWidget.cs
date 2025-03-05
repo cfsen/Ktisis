@@ -15,6 +15,7 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		public Vector2 SizeToolbelt { get; }
 
 		private IEditorContext ctx;
+		private LazyUi lui;
 		private LazyUiSizes uis;
 		private float gs;
 
@@ -25,8 +26,9 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			this.InToolbelt = false;
 
 			this.ctx = ctx;
-			this.uis = ctx.LazyExtras.Sizes;
-			this.gs = ctx.LazyExtras.Sizes.Scale;
+			this.lui = new();
+			this.uis = lui.uis;
+			this.gs = lui.uis.Scale;
 		}
 		public void Draw() {
 			ImGui.Text("Hello");

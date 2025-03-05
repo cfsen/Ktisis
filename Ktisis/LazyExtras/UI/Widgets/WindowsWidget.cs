@@ -11,7 +11,7 @@ using System.Numerics;
 namespace Ktisis.LazyExtras.UI.Widgets;
 class WindowsWidget :ILazyWidget {
 	private IEditorContext ctx;
-	private LazyBase lb;
+	private LazyUi lui;
 	private LazyUiSizes uis;
 
 	public LazyWidgetCat Category { get; }
@@ -22,8 +22,8 @@ class WindowsWidget :ILazyWidget {
 
 	public WindowsWidget(IEditorContext ctx) {
 		this.ctx = ctx;
-		this.lb = this.ctx.LazyExtras;
-		this.uis = new();
+		this.lui = new();
+		this.uis = lui.uis;
 
 		this.Category = LazyWidgetCat.Misc;
 		this.SupportsToolbelt = false;
@@ -31,14 +31,41 @@ class WindowsWidget :ILazyWidget {
 		this.InToolbelt = false;
 	}
 	public void Draw() {
-		if(ctx.LazyExtras.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLightEditor", uis.BtnSmall))
+		if(lui.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLightEditor", uis.BtnSmall, "Light editor"))
 			dp("Light editor");
-		if (lb.BtnIcon(FontAwesomeIcon.Passport, "OpenCharacterEditor", uis.BtnSmall))
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.Passport, "OpenCharacterEditor", uis.BtnSmall, "Pose editor"))
 			ctx.Interface.TogglePosingWindow();
-		if (lb.BtnIcon(FontAwesomeIcon.Camera, "OpenCameraEditor", uis.BtnSmall))
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.Camera, "OpenCameraEditor", uis.BtnSmall, "Camera editor"))
 			ctx.Interface.ToggleCameraWindow();
-		if (lb.BtnIcon(FontAwesomeIcon.SyncAlt, "OpenTransformEditor", uis.BtnSmall))
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.SyncAlt, "OpenTransformEditor", uis.BtnSmall, "Transform editor"))
 			ctx.Interface.ToggleTransformWindow();
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.Anchor, "OpenLazyPose", uis.BtnSmall, "Lazy pose"))
+			ctx.Interface.ToggleLazyPose();
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.CameraRetro, "OpenLazyCamera", uis.BtnSmall, "Lazy camera"))
+			ctx.Interface.ToggleLazyCamera();
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLazyLights", uis.BtnSmall, "Lazy lights"))
+			ctx.Interface.ToggleLazyLights();
+		ImGui.SameLine();
+		ImGui.Spacing();
+		ImGui.SameLine();
 	}
 	private static void dp(string s) {
 		Ktisis.Log.Debug(s);
