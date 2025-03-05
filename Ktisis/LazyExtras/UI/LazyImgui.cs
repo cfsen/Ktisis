@@ -13,17 +13,18 @@ using Ktisis.Interface.Components.Workspace;
 
 using Ktisis.LazyExtras;
 using Ktisis.LazyExtras.Interfaces;
+using Ktisis.LazyExtras.UI;
+using Ktisis.LazyExtras.UI.Widgets;
 
 using System;
 using System.Numerics;
 using System.Collections.Generic;
-using Ktisis.LazyExtras.UI.Widgets;
 
 namespace Ktisis.Interface.Windows;
 
 public class LazyImgui : KtisisWindow {
 	private readonly IEditorContext ctx;
-	private LazyBase lb;
+	private LazyUi lui;
 	private Vector2 ScreenDimensions;
 
 	private bool Pinned = true;
@@ -37,10 +38,10 @@ public class LazyImgui : KtisisWindow {
 
 	public LazyImgui(IEditorContext ctx) : base("LazyImGui", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize) {
 		this.ctx = ctx;
-		this.lb = ctx.LazyExtras;
 
-		this.uis = ctx.LazyExtras.Sizes;
-		this.gs = ctx.LazyExtras.Sizes.Scale;
+		this.lui = new();
+		this.uis = lui.uis;
+		this.gs = lui.uis.Scale;
 
 		this.SetScreenDimensionLimits();
 		this.SizeConstraints = new WindowSizeConstraints {
@@ -59,6 +60,7 @@ public class LazyImgui : KtisisWindow {
 	private void Initialize(IEditorContext ctx) {
 		this.Widgets = [
 			//new DemoWidget(),
+			new TransformWidget(ctx),
 			new ActorSelectWidget(ctx),
 			new WindowsWidget(ctx)
 			];
@@ -126,9 +128,10 @@ public class LazyImgui : KtisisWindow {
 		this.DrawHeader();
 	}
 	private void DrawBtnToggleUi() {
-		using var _f = ImRaii.PushFont(UiBuilder.IconFont);
+		//using var _f = ImRaii.PushFont(UiBuilder.IconFont);
 		ImGui.SetCursorPos(new(5,5));
-		if(ImGui.Button(FontAwesomeIcon.Camera.ToIconString() + "###LazyShowUi", uis.BtnBig)) {
+		//if(ImGui.Button(FontAwesomeIcon.Camera.ToIconString() + "###LazyShowUi", uis.BtnBig)) {
+		if(lui.BtnIcon(FontAwesomeIcon.Camera, "LazyShowUi", uis.BtnBig, Hidden ? "Show ktisis" : "Hide ktisis")) {
 			this.Flags ^= ImGuiWindowFlags.NoScrollbar;
 			if(this.Hidden) this.SetShowUi();
 			else this.SetHideUi();
@@ -137,37 +140,40 @@ public class LazyImgui : KtisisWindow {
 	private void DrawHeader() {
 		Vector2 curp = new((uis.BtnBig.X+5*uis.Space.X), uis.Space.Y);
 		ImGui.SetCursorPos(curp);
-		if(ImGui.Button("Shift+Click to pose", new(ScreenDimensions.X/7-uis.BtnBig.X, uis.BtnSmall.Y)))
-			dp("Pose mode");
+		// TODO doesn't color as expected
+		//using (ImRaii.PushColor(ImGuiCol.Button, ctx.Posing.IsEnabled ? 0x00591414 : 0xFF7070C0)) { 
+		if (ImGui.Button(ctx.Posing.IsEnabled ? "End posing" : "Start posing", new((ScreenDimensions.X/7)-uis.BtnBig.X+5*uis.Space.X, uis.BtnSmall.Y)))
+			ctx.Posing.SetEnabled(!ctx.Posing.IsEnabled);
+		//}
 
 		curp.Y += uis.BtnSmall.Y + uis.Space.Y;
 		ImGui.SetCursorPos(curp);
-		if(lb.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall))
+		if(lui.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall, "Time and day settings"))
 			dp("env settings");
 
 		curp.X += uis.BtnSmall.X+uis.Space.X;
 		ImGui.SetCursorPos(curp);
-		if (lb.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall))
+		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
 			dp("Settings");
 
 		curp.X += uis.BtnSmall.X+5*uis.Space.X;
 		ImGui.SetCursorPos(curp);
-		if (lb.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall))
+		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
 			dp("Increase ui scaling");
 
 		curp.X += uis.BtnSmall.X+uis.Space.X;
 		ImGui.SetCursorPos(curp);
-		if (lb.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall))
+		if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
 			dp("decrease ui scaling");
 
 		curp.X += uis.BtnSmall.X+5*uis.Space.X;
 		ImGui.SetCursorPos(curp);
-		if (lb.BtnIcon(FontAwesomeIcon.Undo, "Undo", uis.BtnSmall))
+		if (lui.BtnIcon(FontAwesomeIcon.Undo, "Undo", uis.BtnSmall, "Undo"))
 			this.ctx.Actions.History.Undo();
 		
 		curp.X += uis.BtnSmall.X+uis.Space.X;
 		ImGui.SetCursorPos(curp);
-		if (lb.BtnIcon(FontAwesomeIcon.Redo, "Redo", uis.BtnSmall))
+		if (lui.BtnIcon(FontAwesomeIcon.Redo, "Redo", uis.BtnSmall, "Redo"))
 			this.ctx.Actions.History.Redo();
 
 	}
