@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 using ImGuiNET;
 
@@ -60,6 +61,8 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		public void Draw() {
 			BufferRegenerate();
 
+			DrawHeader();
+
 			using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
 				if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
 					TableUpdate(SliderFormatFlag.Position);
@@ -68,6 +71,8 @@ namespace Ktisis.LazyExtras.UI.Widgets
 				if (lui.SliderTableRow("LazyScaleSlider", ref bufferScale, SliderFormatFlag.Scale, ref xfmEnded))
 					TableUpdate(SliderFormatFlag.Scale);
 			}
+
+			DrawFooter();
 
 			if(xfmEnded && xfmState != null) {
 				xfmEnded = false;
@@ -125,6 +130,26 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			bufferRotLast = bufferRot;
 		}
 
+		private void DrawHeader(){ 
+			// World/Local transform
+			if(lui.BtnIcon((ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? FontAwesomeIcon.Globe : FontAwesomeIcon.Home), 
+				"LazyWorldLocalToggle", uis.BtnSmall, (ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? "Global" : "Local")))
+				ctx.Config.Gizmo.Mode = ctx.Config.Gizmo.Mode ==  ImGuizmo.Mode.World? ImGuizmo.Mode.Local : ImGuizmo.Mode.World;
+			ImGui.SameLine();
+			// Gizmo toggle
+			if(lui.BtnIcon((ctx.Config.Gizmo.Visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash),
+				"LazyGizmoVisToggle", uis.BtnSmall, (ctx.Config.Gizmo.Visible ? "Visible" : "Hidden")))
+				ctx.Config.Gizmo.Visible ^= true;
+			ImGui.SameLine();
+			// Mirror mode
+			if(lui.BtnIcon((ctx.Config.Gizmo.MirrorRotation ? FontAwesomeIcon.ArrowDownUpAcrossLine : FontAwesomeIcon.GripLines), 
+				"LazyMirrorRotationToggle", uis.BtnSmall, (ctx.Config.Gizmo.MirrorRotation ? "Symmetrical" : "Asymmetrical")))
+				ctx.Config.Gizmo.MirrorRotation ^= true;
+		}
+
+		private void DrawFooter() {
+			// TODO toggles for bone parenting, relative rotation
+		}
 		private static void dp(string s) =>	Ktisis.Log.Debug(s); 
     }
 }
