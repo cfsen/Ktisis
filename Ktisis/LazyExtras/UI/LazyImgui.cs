@@ -57,6 +57,7 @@ public class LazyImgui : KtisisWindow {
 	private void Initialize(IEditorContext ctx) {
 		this.Widgets = [
 			//new DemoWidget(),
+			new CameraWidget(ctx),
 			new TransformWidget(ctx),
 			new ActorSelectWidget(ctx),
 			new WindowsWidget(ctx)
