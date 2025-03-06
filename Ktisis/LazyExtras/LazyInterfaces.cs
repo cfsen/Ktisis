@@ -21,4 +21,5 @@ public interface ILazyWidget {
 	bool SupportsToolbelt { get; }
 	Vector2 SizeToolbelt { get; }
 	void Draw();
+	void UpdateScaling();
 }

@@ -57,22 +57,26 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			this.xfmState = null;
 			this.xfmEnded = false;
 		}
-
+		public void UpdateScaling() {
+			this.uis.RefreshScale();
+		}
 		public void Draw() {
 			BufferRegenerate();
+			if (ImGui.BeginChild("LazyTransformWidgetContainer", new(uis.SidebarW, 200))) {
+				DrawHeader();
 
-			DrawHeader();
+				using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
+					if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
+						TableUpdate(SliderFormatFlag.Position);
+					if (lui.SliderTableRow("LazyRotationSlider", ref bufferRot, SliderFormatFlag.Rotation, ref xfmEnded))
+						TableUpdate(SliderFormatFlag.Rotation);
+					if (lui.SliderTableRow("LazyScaleSlider", ref bufferScale, SliderFormatFlag.Scale, ref xfmEnded))
+						TableUpdate(SliderFormatFlag.Scale);
+				}
 
-			using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
-				if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
-					TableUpdate(SliderFormatFlag.Position);
-				if (lui.SliderTableRow("LazyRotationSlider", ref bufferRot, SliderFormatFlag.Rotation, ref xfmEnded))
-					TableUpdate(SliderFormatFlag.Rotation);
-				if (lui.SliderTableRow("LazyScaleSlider", ref bufferScale, SliderFormatFlag.Scale, ref xfmEnded))
-					TableUpdate(SliderFormatFlag.Scale);
+				DrawFooter();
+				ImGui.EndChild();
 			}
-
-			DrawFooter();
 
 			if(xfmEnded && xfmState != null) {
 				xfmEnded = false;
@@ -131,6 +135,15 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		}
 
 		private void DrawHeader(){ 
+		}
+
+		private void DrawFooter() {
+			ImGui.Checkbox("Parenting", ref ctx.Config.Gizmo.ParentBones);
+			ImGui.SameLine();
+			ImGui.Checkbox("Relative", ref ctx.Config.Gizmo.RelativeBones);
+			ImGui.SameLine();
+			ImGui.Spacing();
+			ImGui.SameLine();
 			// World/Local transform
 			if(lui.BtnIcon((ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? FontAwesomeIcon.Globe : FontAwesomeIcon.Home), 
 				"LazyWorldLocalToggle", uis.BtnSmall, (ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? "Global" : "Local")))
@@ -145,10 +158,6 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			if(lui.BtnIcon((ctx.Config.Gizmo.MirrorRotation ? FontAwesomeIcon.ArrowDownUpAcrossLine : FontAwesomeIcon.GripLines), 
 				"LazyMirrorRotationToggle", uis.BtnSmall, (ctx.Config.Gizmo.MirrorRotation ? "Symmetrical" : "Asymmetrical")))
 				ctx.Config.Gizmo.MirrorRotation ^= true;
-		}
-
-		private void DrawFooter() {
-			// TODO toggles for bone parenting, relative rotation
 		}
 		private static void dp(string s) =>	Ktisis.Log.Debug(s); 
     }
