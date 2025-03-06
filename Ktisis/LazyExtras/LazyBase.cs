@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 
@@ -36,14 +37,18 @@ namespace Ktisis.LazyExtras;
 public class LazyBase {
 	//public LazyUiSizes Sizes;
 	public IFramework fw;
+	public FileDialogManager fdm;
 
 	public LazyPoseComponents pose;
 	public LazyCameraComponents camera;
+	public LazyLightsComponents lights;
 
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.fw = fw;
 		this.pose = new(ctx);
 		this.camera = new(ctx);
+		this.lights = new(ctx);
+		this.fdm = new();
 	}
 }
