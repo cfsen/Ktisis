@@ -28,7 +28,7 @@ namespace Ktisis.Interface.Windows;
 public class LazyCamera :KtisisWindow {
 	private readonly IEditorContext _ctx;
 	private readonly GuiManager _gui;
-	private readonly LazyCameraComponents _lazyCameraComponents;
+	//private readonly LazyCameraComponents _lazyCameraComponents;
 
 	private bool _DelimitMinFoV = false;
 	private Gizmo2D _gizmo;
@@ -48,7 +48,7 @@ public class LazyCamera :KtisisWindow {
 	) : base("Lazy camera") {
 		this._ctx = ctx;
 		this._gui = gui;
-		this._lazyCameraComponents = new LazyCameraComponents(ctx, gui);
+		//this._lazyCameraComponents = new LazyCameraComponents(ctx, gui);
 		this._gizmo = giz;
 		this._stopwatch.Start();
 	}
@@ -77,19 +77,20 @@ public class LazyCamera :KtisisWindow {
 		this.CameraList();
 	}
 
-	private void dUpdateDt(float dt) {
-		if(dt < this._dLowDt) {
-			this._dLowDt = dt;
-			Ktisis.Log.Debug("New low dt: " + dt.ToString());
-		}
-		if(dt > this._dHighDt) {
-			this._dHighDt = dt; 
-			Ktisis.Log.Debug("New high dt: " + dt.ToString());
-		}
-		float t = (this._dLastDt+dt)/2;
-		this._dAvgDt = t;
-		this._dLastDt = dt;
-	}
+	//// dt logging
+	//private void dUpdateDt(float dt) {
+	//	if(dt < this._dLowDt) {
+	//		this._dLowDt = dt;
+	//		Ktisis.Log.Debug("New low dt: " + dt.ToString());
+	//	}
+	//	if(dt > this._dHighDt) {
+	//		this._dHighDt = dt; 
+	//		Ktisis.Log.Debug("New high dt: " + dt.ToString());
+	//	}
+	//	float t = (this._dLastDt+dt)/2;
+	//	this._dAvgDt = t;
+	//	this._dLastDt = dt;
+	//}
 
 	private void GizmoConfigControls() {
 		ImGui.SliderFloat("Sensitivity", ref this._gizmoSensitivity, 1.0f, 100.0f);

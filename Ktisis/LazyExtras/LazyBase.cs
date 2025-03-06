@@ -6,6 +6,7 @@ using ImGuiNET;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Selection;
+using Ktisis.Interface.Overlay;
 using Ktisis.Interface.Windows;
 using Ktisis.LazyExtras.Components;
 using Ktisis.LazyExtras.Interfaces;
@@ -37,10 +38,12 @@ public class LazyBase {
 	public IFramework fw;
 
 	public LazyPoseComponents pose;
+	public LazyCameraComponents camera;
 
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.fw = fw;
 		this.pose = new(ctx);
+		this.camera = new(ctx);
 	}
 }
