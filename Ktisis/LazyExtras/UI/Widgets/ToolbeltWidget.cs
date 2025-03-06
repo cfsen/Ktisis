@@ -16,6 +16,9 @@ class ToolbeltWidget : ILazyWidget {
 		this.SupportsToolbelt = false;
 		this.InToolbelt = false;
 	}
+	public void UpdateScaling() {
+		// Not implemented yet
+	}
 	public void Draw() {
 		ImGui.Text("This will let you choose which widgets will appear on the floating toolbelt.");
 	}

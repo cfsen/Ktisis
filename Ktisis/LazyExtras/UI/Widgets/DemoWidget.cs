@@ -30,6 +30,9 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			this.uis = lui.uis;
 			this.gs = lui.uis.Scale;
 		}
+		public void UpdateScaling() {
+			this.uis.RefreshScale();
+		}
 		public void Draw() {
 			ImGui.Text("Hello");
 		}

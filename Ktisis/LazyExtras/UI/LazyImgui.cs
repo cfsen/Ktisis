@@ -44,10 +44,7 @@ public class LazyImgui : KtisisWindow {
 		this.gs = lui.uis.Scale;
 
 		this.SetScreenDimensionLimits();
-		this.SizeConstraints = new WindowSizeConstraints {
-			MinimumSize = uis.BtnBig*gs,
-			MaximumSize = new(this.ScreenDimensions.X*gs*1/7,this.ScreenDimensions.Y)
-		};
+		this.UpdateSidebarSize();
 		//this.Flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
 		this.uis = new LazyUiSizes();
 		this.Widgets = new();
@@ -66,6 +63,12 @@ public class LazyImgui : KtisisWindow {
 			];
 	}
 
+	private void UpdateSidebarSize() {
+		this.SizeConstraints = new WindowSizeConstraints {
+			MinimumSize = uis.BtnBig*gs,
+			MaximumSize = new(uis.SidebarW,uis.ScreenDimensions.Y)
+		};
+	}
 	// Draw imgui
 
 	public override void PreOpenCheck() {
@@ -74,9 +77,11 @@ public class LazyImgui : KtisisWindow {
 		this.Close();
 	}
 	public override void PreDraw() {
-		using var _ = ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, 0.0f);
+		using var _ = ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, 0.0f); // TODO doesnt work
 		this.Position = this.UiPosition;
 		this.Size = this.UiSize;
+		if(this.uis.RefreshScale())
+			this.UpdateSidebarSize();
 	}
 	public override void Draw() {
 		switch(this.Hidden) {
@@ -98,6 +103,7 @@ public class LazyImgui : KtisisWindow {
 		foreach(ILazyWidget w in this.Widgets) {
 			ImGui.Spacing();
 			ImGui.Separator();
+			w.UpdateScaling();
 			w.Draw();
 		}
 	}
@@ -112,7 +118,7 @@ public class LazyImgui : KtisisWindow {
 	private void SetShowUi() {
 		this.SetScreenDimensionLimits();
 		this.Hidden = false;
-		this.UiSize = new Vector2(ScreenDimensions.X*gs*1/7, ScreenDimensions.Y);
+		this.UiSize = new Vector2(ScreenDimensions.X*uis.SidebarFactor, ScreenDimensions.Y);
 		this.UiPosition = new Vector2(0, 0);
 	}
 	private unsafe void SetScreenDimensionLimits() {
@@ -138,40 +144,40 @@ public class LazyImgui : KtisisWindow {
 		}
 	}
 	private void DrawHeader() {
-		Vector2 curp = new((uis.BtnBig.X+5*uis.Space.X), uis.Space.Y);
+		Vector2 curp = new((uis.BtnBig.X+2*uis.Space), uis.Space);
 		ImGui.SetCursorPos(curp);
 		// TODO doesn't color as expected
 		//using (ImRaii.PushColor(ImGuiCol.Button, ctx.Posing.IsEnabled ? 0x00591414 : 0xFF7070C0)) { 
-		if (ImGui.Button(ctx.Posing.IsEnabled ? "End posing" : "Start posing", new((ScreenDimensions.X/7)-uis.BtnBig.X+5*uis.Space.X, uis.BtnSmall.Y)))
+		if (ImGui.Button(ctx.Posing.IsEnabled ? "End posing" : "Start posing", new((uis.SidebarW)-uis.BtnBig.X-4*uis.Space, uis.BtnSmall.Y)))
 			ctx.Posing.SetEnabled(!ctx.Posing.IsEnabled);
 		//}
 
-		curp.Y += uis.BtnSmall.Y + uis.Space.Y;
+		curp.Y += uis.BtnSmall.Y + uis.Space;
 		ImGui.SetCursorPos(curp);
 		if(lui.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall, "Time and day settings"))
 			dp("env settings");
 
-		curp.X += uis.BtnSmall.X+uis.Space.X;
+		curp.X += uis.BtnSmall.X+uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
 			dp("Settings");
 
-		curp.X += uis.BtnSmall.X+5*uis.Space.X;
+		curp.X += uis.BtnSmall.X+3*uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
 			dp("Increase ui scaling");
 
-		curp.X += uis.BtnSmall.X+uis.Space.X;
+		curp.X += uis.BtnSmall.X+uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
 			dp("decrease ui scaling");
 
-		curp.X += uis.BtnSmall.X+5*uis.Space.X;
+		curp.X += uis.BtnSmall.X+3*uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.Undo, "Undo", uis.BtnSmall, "Undo"))
 			this.ctx.Actions.History.Undo();
 		
-		curp.X += uis.BtnSmall.X+uis.Space.X;
+		curp.X += uis.BtnSmall.X+uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.Redo, "Redo", uis.BtnSmall, "Redo"))
 			this.ctx.Actions.History.Redo();
