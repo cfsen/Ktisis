@@ -1,3 +1,4 @@
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
 using Ktisis.Core.Attributes;
@@ -32,6 +33,7 @@ public class ContextBuilder {
 	private readonly IKeyState _keyState;
 	private readonly NamingService _naming;
 	private readonly FormatService _format;
+	private readonly IDalamudPluginInterface _dpi;
 
 	public ContextBuilder(
 		GPoseService gpose,
@@ -40,7 +42,8 @@ public class ContextBuilder {
 		IDataManager data,
 		IKeyState keyState,
 		NamingService naming,
-		FormatService format
+		FormatService format,
+		IDalamudPluginInterface dpi
 	) {
 		this._gpose = gpose;
 		this._interop = interop;
@@ -49,6 +52,7 @@ public class ContextBuilder {
 		this._keyState = keyState;
 		this._naming = naming;
 		this._format = format;
+		this._dpi = dpi;
 	}
 
 	public IEditorContext Create(
@@ -64,7 +68,7 @@ public class ContextBuilder {
 		var select = new SelectManager(context);
 		var attach = new AttachManager();
 		var autoSave = new PoseAutoSave(context, this._framework, this._format);
-		var lazyExtras = new LazyBase(context, select, this._framework);
+		var lazyExtras = new LazyBase(context, select, this._framework, this._dpi);
 
 		var editor = new EditorState(context, scope) {
 			Actions = actions,
