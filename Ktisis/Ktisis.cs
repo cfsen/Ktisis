@@ -12,6 +12,7 @@ namespace Ktisis;
 
 public sealed class Ktisis : IDalamudPlugin {
 	public static IPluginLog Log { get; private set; } = null!;
+	public static IDalamudPluginInterface lazyDpi {get; private set;} = null!; // lazy
 
 	private readonly ServiceProvider _services;
 
@@ -20,6 +21,7 @@ public sealed class Ktisis : IDalamudPlugin {
 		IDalamudPluginInterface dpi
 	) {
 		Log = logger;
+		lazyDpi = dpi;	// lazy
 		
 		this._services = new ServiceComposer()
 			.AddFromAttributes()
