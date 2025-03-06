@@ -83,6 +83,7 @@ public class EditorContext : IEditorContext {
 	public void Dispose() {
 		try {
 			this._state?.Dispose();
+			this.LazyExtras.Dispose();
 		} catch (Exception err) {
 			Ktisis.Log.Error($"Failed to destroy editor context:\n{err}");
 		} finally {
