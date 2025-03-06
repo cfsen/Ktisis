@@ -30,42 +30,30 @@ class WindowsWidget :ILazyWidget {
 		this.SizeToolbelt = Vector2.Zero;
 		this.InToolbelt = false;
 	}
+	public void UpdateScaling() {
+		this.uis.RefreshScale();
+	}
 	public void Draw() {
 		if(lui.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLightEditor", uis.BtnSmall, "Light editor"))
 			dp("Light editor");
 		ImGui.SameLine();
-		ImGui.Spacing();
-		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Passport, "OpenCharacterEditor", uis.BtnSmall, "Pose editor"))
 			ctx.Interface.TogglePosingWindow();
-		ImGui.SameLine();
-		ImGui.Spacing();
 		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Camera, "OpenCameraEditor", uis.BtnSmall, "Camera editor"))
 			ctx.Interface.ToggleCameraWindow();
 		ImGui.SameLine();
-		ImGui.Spacing();
-		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.SyncAlt, "OpenTransformEditor", uis.BtnSmall, "Transform editor"))
 			ctx.Interface.ToggleTransformWindow();
-		ImGui.SameLine();
-		ImGui.Spacing();
 		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Anchor, "OpenLazyPose", uis.BtnSmall, "Lazy pose"))
 			ctx.Interface.ToggleLazyPose();
 		ImGui.SameLine();
-		ImGui.Spacing();
-		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.CameraRetro, "OpenLazyCamera", uis.BtnSmall, "Lazy camera"))
 			ctx.Interface.ToggleLazyCamera();
 		ImGui.SameLine();
-		ImGui.Spacing();
-		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Lightbulb, "OpenLazyLights", uis.BtnSmall, "Lazy lights"))
 			ctx.Interface.ToggleLazyLights();
-		ImGui.SameLine();
-		ImGui.Spacing();
-		ImGui.SameLine();
 	}
 	private static void dp(string s) {
 		Ktisis.Log.Debug(s);

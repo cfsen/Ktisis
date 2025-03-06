@@ -41,6 +41,9 @@ class ActorSelectWidget :ILazyWidget {
 		this.SupportsToolbelt = false;
 		this.SizeToolbelt = Vector2.Zero;
 	}
+	public void UpdateScaling() {
+		// Doesn't need to :)
+	}
 	public void Draw() {
 		this.Draw(400.0f);
 	}
