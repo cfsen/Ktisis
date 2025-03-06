@@ -1,10 +1,12 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
 using ImGuiNET;
 
+using Ktisis.Core.Attributes;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Selection;
 using Ktisis.Interface.Overlay;
@@ -12,6 +14,9 @@ using Ktisis.Interface.Windows;
 using Ktisis.LazyExtras.Components;
 using Ktisis.LazyExtras.Interfaces;
 using Ktisis.LazyExtras.UI.Widgets;
+using Ktisis.Services.Plugin;
+
+using Microsoft.Extensions.DependencyInjection;
 
 using System;
 using System.Collections.Generic;
@@ -19,6 +24,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Ktisis.LazyExtras;
 /*
@@ -34,7 +40,7 @@ namespace Ktisis.LazyExtras;
  * it should be a reasonably straightforward task.
  * 
  * */
-public class LazyBase {
+public class LazyBase :IDisposable {
 	//public LazyUiSizes Sizes;
 	public IFramework fw;
 	public FileDialogManager fdm;
@@ -43,12 +49,20 @@ public class LazyBase {
 	public LazyCameraComponents camera;
 	public LazyLightsComponents lights;
 
-	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw) {
+	public LazyIO io;
+
+	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw, IDalamudPluginInterface dpi) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.fw = fw;
 		this.pose = new(ctx);
 		this.camera = new(ctx);
 		this.lights = new(ctx);
 		this.fdm = new();
+		this.io = new(dpi);
+	}
+
+	public void Dispose() {
+		Ktisis.Log.Debug("LazyBase dispose.");
+		this.io.Dispose();
 	}
 }
