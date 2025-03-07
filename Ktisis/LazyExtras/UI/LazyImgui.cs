@@ -19,44 +19,50 @@ using Ktisis.LazyExtras.UI.Widgets;
 using System;
 using System.Numerics;
 using System.Collections.Generic;
+using Ktisis.Core.Attributes;
+using Dalamud.Plugin.Services;
 
 namespace Ktisis.Interface.Windows;
 
+[Singleton]
 public class LazyImgui : KtisisWindow {
 	private readonly IEditorContext ctx;
+	private readonly ITextureProvider tex;
+
 	private LazyUi lui;
 	private Vector2 ScreenDimensions;
 
 	private bool Pinned = true;
 	private bool Hidden = false;
 
-	private float gs;
 	private Vector2 UiPosition;
 	private Vector2 UiSize;
 	private LazyUiSizes uis;
 	private List<ILazyWidget> Widgets;
 
-	public LazyImgui(IEditorContext ctx) : base("LazyImGui", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize) {
+	public LazyImgui(IEditorContext ctx, ITextureProvider tex) 
+		: base("LazyImGui", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize) {
 		this.ctx = ctx;
+		this.tex = tex;
 
 		this.lui = new();
 		this.uis = lui.uis;
-		this.gs = lui.uis.Scale;
 
 		this.SetScreenDimensionLimits();
 		this.UpdateSidebarSize();
-		//this.Flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
 		this.uis = new LazyUiSizes();
-		this.Widgets = new();
-		this.Initialize(this.ctx);
+		this.Widgets = [];
+		this.Initialize();
 		this.SetShowUi();
+		
 	}
 
 	// Initialize widgets
 
-	private void Initialize(IEditorContext ctx) {
+	private void Initialize() {
 		this.Widgets = [
 			//new DemoWidget(),
+			new PoseFaceWidget(ctx, tex),
 			new LightsWidget(ctx),
 			new CameraWidget(ctx),
 			new TransformWidget(ctx),
@@ -67,7 +73,7 @@ public class LazyImgui : KtisisWindow {
 
 	private void UpdateSidebarSize() {
 		this.SizeConstraints = new WindowSizeConstraints {
-			MinimumSize = uis.BtnBig*gs,
+			MinimumSize = uis.BtnBig*uis.Scale,
 			MaximumSize = new(uis.SidebarW,uis.ScreenDimensions.Y)
 		};
 	}
@@ -89,7 +95,10 @@ public class LazyImgui : KtisisWindow {
 		switch(this.Hidden) {
 			case false:
 				this.DrawWorkspace();
+				this.DrawWidgetSelector();
+				ImGui.BeginChild("ScrollingRegion", new(uis.SidebarW-2*uis.Space, uis.ScreenDimensions.Y-uis.BtnBig.Y-uis.BtnSmall.Y-4*uis.Space), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
 				this.DrawWidgets();
+				ImGui.EndChild();
 				break;
 			case true: {
 				using var _wp = ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, Vector2.Zero);
@@ -157,22 +166,22 @@ public class LazyImgui : KtisisWindow {
 		curp.Y += uis.BtnSmall.Y + uis.Space;
 		ImGui.SetCursorPos(curp);
 		if(lui.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall, "Time and day settings"))
-			dp("env settings");
+			dbg("env settings");
 
 		curp.X += uis.BtnSmall.X+uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
-			dp("Settings");
+			dbg("Settings");
 
 		curp.X += uis.BtnSmall.X+3*uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
-			dp("Increase ui scaling");
+			dbg("Increase ui scaling");
 
 		curp.X += uis.BtnSmall.X+uis.Space;
 		ImGui.SetCursorPos(curp);
 		if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
-			dp("decrease ui scaling");
+			dbg("decrease ui scaling");
 
 		curp.X += uis.BtnSmall.X+3*uis.Space;
 		ImGui.SetCursorPos(curp);
@@ -185,10 +194,24 @@ public class LazyImgui : KtisisWindow {
 			this.ctx.Actions.History.Redo();
 
 	}
+	private void DrawWidgetSelector() {
+		if (lui.BtnIcon(FontAwesomeIcon.Brain, "WMContext", uis.BtnSmall, "Smart widgets"))
+			dbg("Contextual");
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.PersonRays, "WMGesture", uis.BtnSmall, "Gesture widgets"))
+			dbg("Gesture");
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.UserCircle, "WMPortrait", uis.BtnSmall, "Portrait widgets"))
+			dbg("Portrait");
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.CameraRetro, "WMCamera", uis.BtnSmall, "Camera widgets"))
+			dbg("Camera");
+		ImGui.SameLine();
+		if (lui.BtnIcon(FontAwesomeIcon.Lightbulb, "WMLights", uis.BtnSmall, "Lights widgets"))
+			dbg("Lights");
+	}
 
 	// Utilities
 
-	private static void dp(string s) {
-		Ktisis.Log.Debug(s);
-	}
+	private void dbg(string s) => Ktisis.Log.Debug(s);
 }
