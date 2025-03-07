@@ -49,7 +49,6 @@ public class LazyCameraComponents {
 	public void DrawGizmoConfigControls() {
 		ImGui.SliderFloat("Sensitivity", ref this.gizmoSensitivity, 1.0f, 100.0f);
 	}
-
 	public unsafe void DrawNavControls() {
 
 		EditorCamera? ec = this.ctx.Cameras.Current;
@@ -119,32 +118,32 @@ public class LazyCameraComponents {
 		ec.RelativeOffset.Y = ypos;
 	}
 
+	// TODO this is mostly UI stuff, move out of components?
 	public void DrawCameraList() {
-		ImGui.Text("Cameras:");
-		ImGui.Separator();
+		//ImGui.Text("Camera manager:");
+		//ImGui.Separator();
 		var l = this.ctx.Cameras.GetCameras().ToList();
 		int i = 0;
 		foreach ( var cam in l ) {
 			ImGui.Text(cam.Name);
 			ImGui.SameLine();
-			var xoffset = ImGui.GetWindowSize().X - 100.0f;
+			var xoffset = ImGui.GetWindowSize().X - 190.0f;
 			ImGui.SetCursorPosX(xoffset);
 
 			// Disable button for active camera 
+
 			if(cam == this.ctx.Cameras.Current)
 				ImGui.BeginDisabled();
+			//if(cam != this.ctx.Cameras.Current)
+			//	ImGui.BeginDisabled();
+			if(ImGui.Button($"Select##lazyCamSelBtn{i}", new(80.0f, 0))) 
+				this.ctx.Cameras.SetCurrent(cam);
+			//if(cam != this.ctx.Cameras.Current)
+			//	ImGui.EndDisabled();
+			ImGui.SameLine();
 
-			if(ImGui.Button(
-				$"Delete##lazyCamDelBtn{i}", 
-				new Vector2 {
-					X=80.0f, 
-					Y=0
-				})
-			) {
-				Ktisis.Log.Debug("LazyCamera: Removing camera: " + cam.Name);
+			if(ImGui.Button( $"Delete##lazyCamDelBtn{i}", new Vector2 { X=80.0f, Y=0 }) ) 
 				this.ctx.Cameras.RemoveCamera(cam);
-			}
-
 			if(cam == this.ctx.Cameras.Current)
 				ImGui.EndDisabled();
 

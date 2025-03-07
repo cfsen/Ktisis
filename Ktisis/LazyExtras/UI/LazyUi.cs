@@ -26,6 +26,18 @@ class LazyUi {
 
 	}
 
+	// Widget utility
+
+	public void DrawHeader(FontAwesomeIcon icon, string header) {
+		ImGui.Spacing();
+		using(ImRaii.PushFont(UiBuilder.IconFont)) {
+			ImGui.Text(icon.ToIconString());
+		}
+		ImGui.SameLine();
+		ImGui.Text(header);
+		ImGui.Spacing();
+	}
+
 	// Slider inputs
 
 	public bool SliderTableRow(string s, ref Vector3 val, SliderFormatFlag type, ref bool stateChanged) {
@@ -86,15 +98,23 @@ class LazyUi {
 			};
 		return res;
 	}
+
+	internal void DrawFooter() {
+		ImGui.Spacing();
+	}
 }
 
 // Used for scalable UI in LazyImgui and LazyWidgets
 // TODO only use one instance of this ffs
 public struct LazyUiSizes {
+	private Vector2 bBtnSmaller;
 	private Vector2 bBtnSmall;
 	private Vector2 bBtnBig;
+
 	private float bSpace;
+
 	public readonly Vector2 BtnSmall => bBtnSmall * Scale;
+	public readonly Vector2 BtnSmaller => bBtnSmaller * Scale;
 	public readonly Vector2 BtnBig => bBtnBig * Scale;
 	public readonly float Space => bSpace * Scale;
 
@@ -107,6 +127,7 @@ public struct LazyUiSizes {
 
 	public LazyUiSizes() {
 		bBtnSmall = new(37, 37);
+		bBtnSmaller = new(22, 22);
 		bBtnBig = new(79, 79);
 		bSpace = 5.0f;
 		Scale = ImGui.GetIO().FontGlobalScale;
