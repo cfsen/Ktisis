@@ -381,7 +381,7 @@ public class LazyPoseComponents {
 	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
 	/// </summary>
 	/// <returns>Selected ActorEntity on success, null on failure.</returns>
-	private ActorEntity? ResolveActorEntity() {
+	public ActorEntity? ResolveActorEntity() {
 		// Resolves the parent actor entity of any bone. Recursion warning.
 		var selected = this._ctx.Selection.GetSelected().FirstOrDefault();
 		if (selected == null)
