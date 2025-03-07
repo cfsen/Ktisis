@@ -18,10 +18,12 @@ namespace Ktisis.Interface.Windows;
 public class LazyPose :KtisisWindow {
 	private readonly IEditorContext _ctx;
 	private LazyPoseComponents _components;
+	private Vector2 v2;
 	public LazyPose(
 		IEditorContext ctx
 	) : base("Lazy pose") {
 		this._ctx = ctx;
+		this.v2 = Vector2.Zero;
 		this._components = this._ctx.LazyExtras.pose;
 	}
 
@@ -77,6 +79,8 @@ public class LazyPose :KtisisWindow {
 		//ImGui.SameLine();
 		//if (ImGui.Button("Eye"))
 		//	this._components.SelectEyeBall();
+		Joystick("joy", ref v2);
+		ImGui.Text(v2.ToString());
 		ImGui.Separator();
 		//this._components.dbgMatrixInspector("Left Eye");
 		//this._components.dbgMatrixInspector("Right Eye");
@@ -101,7 +105,7 @@ public class LazyPose :KtisisWindow {
 				dragOffset = Vector2.Normalize(dragOffset) * radius;
 			}
 			output = dragOffset / radius;
-		} else if (!isHovered)
+		} else if (ImGui.IsItemDeactivated())
 		{
 			output = Vector2.Zero; // Reset when released
 		}
@@ -109,11 +113,11 @@ public class LazyPose :KtisisWindow {
 		// Draw background circle
 		var drawList = ImGui.GetWindowDrawList();
 		drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(new Vector4(0.2f, 0.2f, 0.2f, 1.0f)), 32);
-		drawList.AddCircle(center, radius, ImGui.GetColorU32(new Vector4(1.0f, 1.0f, 1.0f, 1.0f)), 32);
+		drawList.AddCircle(center, radius, ImGui.GetColorU32(new Vector4(0.3f, 0.3f, 0.3f, 1.0f)), 32);
 
 		// Draw moving joystick
 		Vector2 knobPos = center + output * radius;
-		drawList.AddCircleFilled(knobPos, 10.0f, ImGui.GetColorU32(new Vector4(1.0f, 0.0f, 0.0f, 1.0f)), 16);
+		drawList.AddCircleFilled(knobPos, 10.0f, ImGui.GetColorU32(new Vector4(0.7f, 0.5f, 0.5f, 1.0f)), 16);
 
 		return isActive;
 	}
