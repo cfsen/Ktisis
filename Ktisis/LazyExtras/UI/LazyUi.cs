@@ -99,8 +99,12 @@ class LazyUi {
 			};
 		return res;
 	}
-
-	internal void DrawFooter() {
+	public bool BtnIconState(FontAwesomeIcon icon, string id, Vector2 size, string tooltip, bool btnState, uint activeCol, uint passiveCol) {
+		using(ImRaii.PushColor(ImGuiCol.Button, btnState ? activeCol : passiveCol)) {
+			return BtnIcon(icon, id, size, tooltip);
+		}
+	}
+	public void DrawFooter() {
 		ImGui.Dummy(new(0, uis.BtnSmaller.Y/2));
 	}
 }
