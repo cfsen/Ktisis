@@ -24,6 +24,8 @@ using Dalamud.Plugin.Services;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Plugin;
+using Ktisis.Services.Plugin;
 
 namespace Ktisis.Interface.Windows;
 

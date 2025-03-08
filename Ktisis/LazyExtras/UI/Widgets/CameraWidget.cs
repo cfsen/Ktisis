@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Plugin;
 
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
@@ -11,6 +12,7 @@ using Ktisis.Common.Utility;
 using Ktisis.Editor.Camera.Types;
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;
+using Ktisis.Services.Plugin;
 
 using System;
 using System.Numerics;
@@ -45,9 +47,26 @@ class CameraWidget :ILazyWidget {
 	public void Draw() {
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.CameraRetro, "Cameras");
-		ctx.LazyExtras.camera.DrawNavControls();
-		ctx.LazyExtras.camera.DrawGizmoConfigControls();
+		// RFAC START
+
+		ImGui.BeginGroup();
+		ImGui.BeginGroup();
+		DrawJoystickConfig();
+		ImGui.SameLine();
+		lui.BtnIcon(FontAwesomeIcon.QuestionCircle, "WCamJoyTT", uis.BtnSmaller, "SHIFT: longitudal movement\nCTRL: lateral movement");
+		ImGui.EndGroup();
+		
+		ImGui.SameLine();
+		ImGui.Dummy(new(3*uis.Space, 0));
+		ImGui.SameLine();
+
+		Joystick("WJoystickXZ", ref ctx.LazyExtras.camera.JoystickBuffer);
+		ctx.LazyExtras.camera.HandleJoystick();
+		ImGui.EndGroup();
+
 		DrawTranslationControls();
+
+		// RFAC END
 		DrawOrbitTarget();
 		DrawAnglePan();
 		DrawSliders();
@@ -63,9 +82,15 @@ class CameraWidget :ILazyWidget {
 			ctx.Cameras.Create();
 		ImGui.SameLine();
 		ImGui.Text("Camera manager:");
-		//ImGui.Separator();
 	}
 
+	public void DrawJoystickConfig() {
+		using(ImRaii.ItemWidth(uis.SidebarW/3)) {
+			ImGui.SliderFloat("Sensitivity", ref ctx.LazyExtras.camera.JoystickSensitivty, 0.1f, 20.0f);
+		}
+	}
+	
+	
 	// Ported from CameraWindow
 	// TODO cleanup
 	public void DrawCameraModeControls() {
@@ -83,33 +108,43 @@ class CameraWidget :ILazyWidget {
 			camera.SetDelimited(delimit);
 	}
 	public unsafe void DrawTranslationControls() {
+		// check valid cam
 		EditorCamera? camera = this.ctx.Cameras.Current;
 		if(camera == null) return;
+		// check valid pos
 		var posVec = camera?.GetPosition() ?? null;
 		if (posVec == null) return;
 
+		// grab val from nullable
 		var pos = posVec.Value;
+		// assume cam is fixed if FixedPos is set
 		var isFixed = camera!.FixedPosition != null;
 
+		// subtract relative offset from a fixed cam?
 		if (!isFixed)
 			pos -= camera.RelativeOffset;
 		
+		// UI stuff
 		var lockIcon = isFixed ? FontAwesomeIcon.Lock : FontAwesomeIcon.Unlock;
 		var lockHint = isFixed
 			? this.ctx.Locale.Translate("camera_edit.position.unlock")
 			: this.ctx.Locale.Translate("camera_edit.position.lock");
-		if (lui.BtnIcon(lockIcon, "WFixedCam", uis.BtnSmall, "Fixed cam"))
+		if (lui.BtnIcon(lockIcon, "WFixedCam", uis.BtnSmaller, "Fixed cam"))
 			camera.FixedPosition = isFixed ? null : pos;
 		ImGui.SameLine();
+
+		// checkboxes: no collide, delimit
 		DrawCameraModeControls();
 
-		bool _ = false;
+		bool _ = false; // TODO discarding position buffer, implement with refac
+		// disable changing cam position if camera is fixed.
 		using (ImRaii.Disabled(!isFixed)) {
 		if (lui.SliderTableRow("LWCamPos", ref pos, SliderFormatFlag.Position, ref _))
 			camera.FixedPosition = pos;
 		}
 
-		bool __ = false;
+		bool __ = false; // TODO another discard, implement with refac
+		// offset position sliders
 		lui.SliderTableRow("LWCamOffset", ref camera.RelativeOffset, SliderFormatFlag.Position, ref __);
 	}
 	private unsafe void DrawOrbitTarget() {
@@ -125,9 +160,18 @@ class CameraWidget :ILazyWidget {
 		var lockHint = isFixed
 			? this.ctx.Locale.Translate("camera_edit.orbit.unlock")
 			: this.ctx.Locale.Translate("camera_edit.orbit.lock");
-		if (lui.BtnIcon(lockIcon, "WOrbit", uis.BtnSmall, lockHint))
+		if (lui.BtnIcon(lockIcon, "WOrbit", uis.BtnSmaller, lockHint))
 			camera.OrbitTarget = isFixed ? null : target.ObjectIndex;
 
+		
+		ImGui.SameLine();
+		//ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - Buttons.CalcSize());
+		if (lui.BtnIcon(FontAwesomeIcon.Sync, "WOffsetToTarget", uis.BtnSmaller, this.ctx.Locale.Translate("camera_edit.offset.to_target"))) {
+			var gameObject = (GameObject*)target.Address;
+			var drawObject = gameObject->DrawObject;
+			if (drawObject != null)
+				camera.RelativeOffset = drawObject->Object.Position - gameObject->Position;
+		}
 		ImGui.SameLine();
 
 		var text = $"Orbiting: {target.Name.TextValue}";
@@ -135,15 +179,6 @@ class CameraWidget :ILazyWidget {
 			ImGui.Text(text);
 		else
 			ImGui.TextDisabled(text);
-		
-		ImGui.SameLine();
-		//ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - Buttons.CalcSize());
-		if (lui.BtnIcon(FontAwesomeIcon.Sync, "WOffsetToTarget", uis.BtnSmall, this.ctx.Locale.Translate("camera_edit.offset.to_target"))) {
-			var gameObject = (GameObject*)target.Address;
-			var drawObject = gameObject->DrawObject;
-			if (drawObject != null)
-				camera.RelativeOffset = drawObject->Object.Position - gameObject->Position;
-		}
 	}
 
 	// Everything below here is raw import from CameraWindow
@@ -243,8 +278,8 @@ class CameraWidget :ILazyWidget {
 	}
 
 	// New controller for camera :)
-
-	public bool Joystick(string label, ref Vector2 output, float radius = 50.0f) {
+		// TODO lock in to axis with modifier keys+one for Y axis
+	public bool Joystick(string label, ref Vector3 output, float radius = 50.0f) {
 		Vector2 cursorPos = ImGui.GetCursorScreenPos();
 		Vector2 center = cursorPos + new Vector2(radius, radius);
 
@@ -255,14 +290,26 @@ class CameraWidget :ILazyWidget {
 		Vector2 dragOffset = ImGui.GetMouseDragDelta(0, 0.0f);
 		float dragLength = dragOffset.Length();
 
+
 		if (isActive) {
-			if (dragLength > radius) { // Clamp to joystick boundary
-				dragOffset = Vector2.Normalize(dragOffset) * radius;
-			}
-			output = dragOffset / radius;
+			float dy = 0;
+			if(ImGui.IsKeyDown(ImGuiKey.LeftShift)) // clamp to longitudinal movement
+				dragOffset.X = 0;
+			// TODO fix this
+			//else if (ImGui.IsKeyDown(ImGuiKey.LeftAlt)) { // clamp to vertical movement
+			//	dy = dragOffset.Y;
+			//	dragOffset.X = 0;
+			//	dragOffset.Y = 0;
+			//}
+			else if (ImGui.IsKeyDown(ImGuiKey.LeftCtrl)) // clamp to lateral movement
+				dragOffset.Y = 0;
+			if (dragLength > radius-10.0f) // Clamp to boundary
+				dragOffset = Vector2.Normalize(dragOffset) * (radius-10.0f);
+
+			output = new Vector3(dragOffset.X, dy, dragOffset.Y) / radius;
 		} 
 		else if (ImGui.IsItemDeactivated()) {
-			output = Vector2.Zero; // Reset when released
+			output = Vector3.Zero; // Reset when released
 		}
 
 		// Draw background circle
@@ -271,9 +318,10 @@ class CameraWidget :ILazyWidget {
 		drawList.AddCircle(center, radius, ImGui.GetColorU32(new Vector4(0.3f, 0.3f, 0.3f, 1.0f)), 32);
 
 		// Draw moving joystick
-		Vector2 knobPos = center + output * radius;
+		Vector2 knobPos = center + new Vector2(output.X, output.Z) * radius;
 		drawList.AddCircleFilled(knobPos, 10.0f, ImGui.GetColorU32(new Vector4(0.7f, 0.5f, 0.5f, 1.0f)), 16);
 
 		return isActive;
 	}
+	private void dbg(string s) => Ktisis.Log.Debug($"CameraWidget: {s}");
 }

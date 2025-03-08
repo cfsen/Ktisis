@@ -9,6 +9,7 @@ using Ktisis.Interface.Overlay;
 
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -27,96 +28,80 @@ public class LazyCameraComponents {
 	private readonly IEditorContext ctx;
 
 	private bool DelimitMinFoV = false;
-	private Gizmo2D? gizmo;
-	private Stopwatch stopwatch = new Stopwatch();
-	private Vector3 vel = Vector3.Zero;
-	private float gizmoSensitivity = 10.0f;
 
-	private float dLastDt = 0.0f;
-	private float dLowDt = float.MaxValue;
-	private float dHighDt = float.MinValue;
-	private float dAvgDt = 0.0f;
+	private Vector3 cameraVelocity = Vector3.Zero;
+	private Stopwatch delta = new();
+	private float dt;
 
-	private GizmoManager gm;
+	public Vector3 JoystickBuffer;
+	public float JoystickSensitivty = 5.0f;
+
 
 	public LazyCameraComponents(IEditorContext ctx) {
 		this.ctx = ctx;
-		this.gm = new(ctx.Config);
-		gm.Initialize();
-		//this.gizmo = gizmo;
-		this.stopwatch.Start();
+		this.delta.Start();
 	}
-	public void DrawGizmoConfigControls() {
-		ImGui.SliderFloat("Sensitivity", ref this.gizmoSensitivity, 1.0f, 100.0f);
-	}
-	public unsafe void DrawNavControls() {
+	// RFAC: Move to UI
 
+	// RFAC START
+
+	// Joystick widget
+
+	public void HandleJoystick() {
 		EditorCamera? ec = this.ctx.Cameras.Current;
 		if(ec == null) return;
-		// TODO be less lazy
-		float ypos = ec.RelativeOffset.Y;
-
-		// makeshift delta time
-		float dt = this.stopwatch.ElapsedMilliseconds / 1000.0f;
-		this.stopwatch.Restart();
+		// TODO be less lazy; this locks the camera from traversing vertically. make it more elegant.
+		//float ypos = ec.RelativeOffset.Y;
+		UpdateDeltaTime(ec);
+		CalcCameraVelocity(ec, JoystickBuffer);
+		CalcCameraDeceleration(ec);
+		// TODO less lazy
+		//ec.RelativeOffset.Y = ypos;
+	}
 	
-		//this.dUpdateDt(dt);
-		this.gizmo ??= new(gm.Create(GizmoId.LazyGizmo), true, 0.8f);
+	private void UpdateDeltaTime(EditorCamera ec) {
+		// makeshift delta time
+		dt = this.delta.ElapsedMilliseconds / 1000.0f;
+		this.delta.Restart();
 
-		this.gizmo.Begin(new Vector2(310, 310));
-		this.gizmo.Mode = ImGuizmo.Mode.World;
+		// TODO EDGE CASE
+			// Make a hard cutoff for high dt (t>1s?)
+	}
+	private unsafe void CalcCameraVelocity(EditorCamera ec, Vector3 input) {
+		double angle = ec.Camera->CalcRotation().X + Math.PI;
+		Vector3 delta = Vector3.Zero;
 
-		// Arbitrary matrix, since we can derive world orientation via CalcRotation() later
-		var matrix = Matrix4x4.CreateFromAxisAngle(Vector3.Zero, 1.0f); 
-		this.gizmo.SetLookAt(new Vector3{ X = 0.0f, Y = 0.0f, Z = 1.0f}, matrix.Translation, 0.5f);
-		var result = this.gizmo.Manipulate(ref matrix, out _);
-
-		this.gizmo.End();
-
-		if (result)	{
-			/*
-			 * This cursed abomination maps input from the translation gizmo's XY handles
-			 * to movement along the XZ plane, relative to where the camera is facing.
-			 * Y: Moves the camera forward
-			 * X: Moves the camera laterally
-			 * */
-			double angle = ec.Camera->CalcRotation().X + Math.PI;
-			Vector3 delta = Vector3.Zero;
-			//float deltaDampening = 10.0f;
-			// Forwards/backwards
-			if(matrix.Translation.Y != 0.0f) {
-				delta.X = (float)(Math.Sin(angle)*matrix.Translation.Y);
-				delta.Z = (float)(Math.Cos(angle)*matrix.Translation.Y);
-			}
-			// lateral
-			if(matrix.Translation.X != 0.0f) {
-				delta.X += -(float)(Math.Sin(angle+(Math.PI/2))*matrix.Translation.X);
-				delta.Z += -(float)(Math.Cos(angle+(Math.PI/2))*matrix.Translation.X);
-			}
-
-			// buffer changes
-			this.vel += delta*this.gizmoSensitivity;
-			//Ktisis.Log.Debug("vel:" + this._vel.ToString());
+		// translates to camera longitudinal motion
+		if(input.Z != 0.0f) {
+			delta.X = -(float)(Math.Sin(angle)*input.Z);
+			delta.Z = -(float)(Math.Cos(angle)*input.Z);
+		}
+		// translates to camera lateral motion
+		if(input.X != 0.0f) {
+			delta.X += -(float)(Math.Sin(angle+(Math.PI/2))*input.X);
+			delta.Z += -(float)(Math.Cos(angle+(Math.PI/2))*input.X);
 		}
 
+		if(input.Y != 0.0f)
+		{
+			
+		}
+
+		// buffer changes
+		this.cameraVelocity += delta*this.JoystickSensitivty;
+	}
+	private void CalcCameraDeceleration(EditorCamera ec) {
 		// Decelerate
-		if(this.vel.X != 0.0f || this.vel.Z != 0.0f) {
-			//Vector3 dbgPrev = ec.RelativeOffset;
-			//Vector3 dbgTarget = ec.RelativeOffset*this._vel*dt;
-			ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, (ec.RelativeOffset+this.vel*dt), 0.1f);
-			//Vector3 dbgAfter = ec.RelativeOffset;
-			this.vel *= (float)Math.Pow(1e-7f, dt);
+		if(this.cameraVelocity.X != 0.0f || this.cameraVelocity.Z != 0.0f) {
+			ec.RelativeOffset = Vector3.Lerp(ec.RelativeOffset, (ec.RelativeOffset+cameraVelocity*dt), 0.1f);
+			this.cameraVelocity *= (float)Math.Pow(1e-7f, dt);
 
 			// Stop when movement becomes hard to discern.
-			if(this.vel.Length() < 1e-2f)
-				this.vel = Vector3.Zero;
-
-			//Ktisis.Log.Debug("dbg:" + dbgPrev.ToString() + "|" + dbgTarget.ToString() + "|" + dbgAfter.ToString());
+			if(this.cameraVelocity.Length() < 1e-2f)
+				this.cameraVelocity = Vector3.Zero;
 		}
-
-		// TODO less lazy
-		ec.RelativeOffset.Y = ypos;
 	}
+	// RFAC END
 
 	// TODO this is mostly UI stuff, move out of components?
 	public void DrawCameraList() {
