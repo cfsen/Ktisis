@@ -19,9 +19,10 @@ using System.Linq;
 using System.Numerics;
 
 namespace Ktisis.LazyExtras.UI.Widgets;
-class ActorSelectWidget :ILazyWidget {
+class NodeSelectWidget :ILazyWidget {
 	private readonly IEditorContext _ctx;
 	private readonly SceneDragDropHandler _dragDrop;
+
 
 	// LazyWidget
 	public LazyWidgetCat Category { get; }
@@ -30,10 +31,15 @@ class ActorSelectWidget :ILazyWidget {
 	public bool SupportsToolbelt { get; }
 	public Vector2 SizeToolbelt { get; }
 
-	public ActorSelectWidget(IEditorContext ctx) {
+	private LazyUi lui;
+	private LazyUiSizes uis;
+
+	public NodeSelectWidget(IEditorContext ctx) {
 
 		this._ctx = ctx;
 		this._dragDrop = new SceneDragDropHandler(ctx);
+		this.lui = new();
+		this.uis = lui.uis;
 
 		// LazyWidget
 		this.Category = LazyWidgetCat.Selection;
@@ -45,7 +51,11 @@ class ActorSelectWidget :ILazyWidget {
 		// Doesn't need to :)
 	}
 	public void Draw() {
+		ImGui.BeginGroup();
+		lui.DrawHeader(FontAwesomeIcon.AddressBook, "Actor tree");
 		this.Draw(400.0f);
+		lui.DrawFooter();
+		ImGui.EndGroup();
 	}
 
 	// For testing purposes
@@ -85,6 +95,7 @@ class ActorSelectWidget :ILazyWidget {
 
 		var spacing = ImGui.GetStyle().ItemSpacing;
 		using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing with { Y = 5.0f });
+		// TODO filtering can be done here
 		this.IterateTree(this._ctx.Scene.Children);
 	}
 

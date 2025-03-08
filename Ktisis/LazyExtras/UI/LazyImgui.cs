@@ -62,11 +62,11 @@ public class LazyImgui : KtisisWindow {
 	private void Initialize() {
 		this.Widgets = [
 			//new DemoWidget(),
-			//new PoseFaceWidget(ctx, tex),
+			new PoseFaceWidget(ctx, tex),
 			new LightsWidget(ctx),
 			new CameraWidget(ctx),
 			new TransformWidget(ctx),
-			new ActorSelectWidget(ctx),
+			new NodeSelectWidget(ctx),
 			new WindowsWidget(ctx)
 			];
 	}
