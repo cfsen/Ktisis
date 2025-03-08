@@ -34,7 +34,7 @@ class NodeSelectWidget :ILazyWidget {
 	private LazyUi lui;
 	private LazyUiSizes uis;
 
-	public NodeSelectWidget(IEditorContext ctx) {
+	public NodeSelectWidget(IEditorContext ctx, bool filterActors = false) {
 
 		this._ctx = ctx;
 		this._dragDrop = new SceneDragDropHandler(ctx);
@@ -53,7 +53,7 @@ class NodeSelectWidget :ILazyWidget {
 	public void Draw() {
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.AddressBook, "Actor tree");
-		this.Draw(400.0f);
+		this.Draw(500.0f);
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}

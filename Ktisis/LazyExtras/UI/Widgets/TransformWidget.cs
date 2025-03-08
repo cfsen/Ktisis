@@ -41,7 +41,7 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		private bool xfmEnded;
 
 		public TransformWidget(IEditorContext ctx) {
-			this.Category = LazyWidgetCat.Misc;
+			this.Category = LazyWidgetCat.Transformers;
 			this.SupportsToolbelt = false;
 			this.SizeToolbelt = Vector2.Zero;
 			this.InToolbelt = false;

@@ -38,7 +38,7 @@ class PoseFaceWidget :ILazyWidget {
 	private ActorEntity? selectedActor;
 
 	public PoseFaceWidget(IEditorContext ctx, ITextureProvider tex) {
-		this.Category = LazyWidgetCat.Misc;
+		this.Category = LazyWidgetCat.Pose;
 		this.SupportsToolbelt = false;
 		this.SizeToolbelt = Vector2.Zero;
 		this.InToolbelt = false;
