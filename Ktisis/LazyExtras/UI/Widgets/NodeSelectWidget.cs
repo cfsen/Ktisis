@@ -96,15 +96,15 @@ class NodeSelectWidget :ILazyWidget {
 	}
 
 	private void DrawTreeActorButtons() {
-		if(_ctx.Selection.GetSelected() is not ActorEntity ae) return;
-		using (ImRaii.Disabled(_ctx.Transform.Target == null || !_ctx.Posing.IsEnabled)) {
+		if(_ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
+		using (ImRaii.Disabled(_ctx.LazyExtras.SelectedActor == null || !_ctx.Posing.IsEnabled)) {
 			if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WNodeTreeLoadPose", uis.BtnSmall, "Load pose"))
 				_ctx.Interface.OpenPoseImport(ae);	// TODO glib dependency
 			ImGui.SameLine();
 			if(lui.BtnIcon(FontAwesomeIcon.Save, "WNodeTreeSavePose", uis.BtnSmall, "Save pose"))
 				ExportPose(ae.Pose);		// TODO
 			ImGui.SameLine();
-			if(lui.BtnIcon(FontAwesomeIcon.LocationCrosshairs, "WNodeTreeTarget", uis.BtnSmall, "Save pose"))
+			if(lui.BtnIcon(FontAwesomeIcon.LocationCrosshairs, "WNodeTreeTarget", uis.BtnSmall, "Target actor"))
 				ae.Actor.SetGPoseTarget();
 		}
 	}
