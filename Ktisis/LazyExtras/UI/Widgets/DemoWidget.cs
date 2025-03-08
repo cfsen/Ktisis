@@ -1,4 +1,5 @@
-﻿using ImGuiNET;
+﻿using Dalamud.Interface;
+using ImGuiNET;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;
@@ -17,7 +18,6 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		private IEditorContext ctx;
 		private LazyUi lui;
 		private LazyUiSizes uis;
-		private float gs;
 
 		public DemoWidget(IEditorContext ctx) {
 			this.Category = LazyWidgetCat.Misc;
@@ -28,13 +28,18 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			this.ctx = ctx;
 			this.lui = new();
 			this.uis = lui.uis;
-			this.gs = lui.uis.Scale;
 		}
 		public void UpdateScaling() {
 			this.uis.RefreshScale();
 		}
 		public void Draw() {
+			ImGui.BeginGroup();
+			lui.DrawHeader(FontAwesomeIcon.Ad, "Demo");
+			
 			ImGui.Text("Hello");
+
+			lui.DrawFooter();
+			ImGui.EndGroup();
 		}
     }
 }

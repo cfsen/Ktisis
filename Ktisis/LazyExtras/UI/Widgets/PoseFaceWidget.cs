@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 
 using ImGuiNET;
@@ -54,6 +55,8 @@ class PoseFaceWidget :ILazyWidget {
 		this.uis.RefreshScale();
 	}
 	public void Draw() {
+		ImGui.BeginGroup();
+		lui.DrawHeader(FontAwesomeIcon.Portrait, "Expression posing");
 		using var _ = ImRaii.TabBar("##pose_tabs");
 
 		var actors = this.ctx.Scene.Children
@@ -68,6 +71,8 @@ class PoseFaceWidget :ILazyWidget {
 			
 			DrawView(actor, new(uis.SidebarW,600));
 		}
+		lui.DrawFooter();
+		ImGui.EndGroup();
 	}
 	private void DrawView(ActorEntity target, Vector2 region) {
 		using var _ = ImRaii.Child("##viewFrame", region, false, ImGuiWindowFlags.NoScrollbar);

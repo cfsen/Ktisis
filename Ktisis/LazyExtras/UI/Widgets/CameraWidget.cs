@@ -54,7 +54,7 @@ class CameraWidget :ILazyWidget {
 		ImGui.Spacing();
 		DrawCameraManagerControls();
 		ctx.LazyExtras.camera.DrawCameraList();
-		//lui.DrawFooter();
+		lui.DrawFooter();
 		ImGui.EndGroup();
 	}
 

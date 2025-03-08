@@ -13,6 +13,8 @@ using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.Skeleton;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.Intrinsics.Arm;
 
@@ -62,8 +64,10 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		}
 		public void Draw() {
 			BufferRegenerate();
-			if (ImGui.BeginChild("LazyTransformWidgetContainer", new(uis.SidebarW, 200))) {
-				DrawHeader();
+			ImGui.BeginGroup();
+			// TODO Target display should be its own function, and also communicate that multiple bones are selected.
+			lui.DrawHeader(FontAwesomeIcon.ArrowsUpDownLeftRight, $"Posing: {ctx.Transform.Target?.Primary?.Name ?? "No target"}");
+			//if (ImGui.BeginChild("LazyTransformWidgetContainer", new(uis.SidebarW, 200))) {
 
 				using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
 					if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
@@ -74,9 +78,11 @@ namespace Ktisis.LazyExtras.UI.Widgets
 						TableUpdate(SliderFormatFlag.Scale);
 				}
 
-				DrawFooter();
-				ImGui.EndChild();
-			}
+				DrawTransformControls();
+			//	ImGui.EndChild();
+			//}
+			lui.DrawFooter();
+			ImGui.EndGroup();
 
 			if(xfmEnded && xfmState != null) {
 				xfmEnded = false;
@@ -134,16 +140,16 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			bufferRotLast = bufferRot;
 		}
 
-		private void DrawHeader(){ 
-		}
-
-		private void DrawFooter() {
+		private void DrawTransformControls() {
+			ImGui.BeginGroup();
 			ImGui.Checkbox("Parenting", ref ctx.Config.Gizmo.ParentBones);
-			ImGui.SameLine();
 			ImGui.Checkbox("Relative", ref ctx.Config.Gizmo.RelativeBones);
+			ImGui.EndGroup();
 			ImGui.SameLine();
-			ImGui.Spacing();
-			ImGui.SameLine();
+
+			ImGui.SetCursorPosX(uis.SidebarW-2*(uis.BtnSmall.X)-ImGui.GetItemRectSize().X);
+			//ImGui.Spacing();
+			//ImGui.SameLine();
 			// World/Local transform
 			if(lui.BtnIcon((ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? FontAwesomeIcon.Globe : FontAwesomeIcon.Home), 
 				"LazyWorldLocalToggle", uis.BtnSmall, (ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? "Global" : "Local")))
