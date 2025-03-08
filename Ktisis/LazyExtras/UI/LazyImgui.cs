@@ -155,9 +155,6 @@ public class LazyImgui : KtisisWindow {
 		this.DrawHeader();
 	}
 	private void DrawBtnToggleUi() {
-		//using var _f = ImRaii.PushFont(UiBuilder.IconFont);
-		ImGui.SetCursorPos(new(5,5));
-		//if(ImGui.Button(FontAwesomeIcon.Camera.ToIconString() + "###LazyShowUi", uis.BtnBig)) {
 		if(lui.BtnIcon(FontAwesomeIcon.Camera, "LazyShowUi", uis.BtnBig, Hidden ? "Show ktisis" : "Hide ktisis")) {
 			this.Flags ^= ImGuiWindowFlags.NoScrollbar;
 			if(this.Hidden) this.SetShowUi();
@@ -165,46 +162,43 @@ public class LazyImgui : KtisisWindow {
 		}
 	}
 	private void DrawHeader() {
-		Vector2 curp = new((uis.BtnBig.X+2*uis.Space), uis.Space);
-		ImGui.SetCursorPos(curp);
-		// TODO doesn't color as expected
-		//using (ImRaii.PushColor(ImGuiCol.Button, ctx.Posing.IsEnabled ? 0x00591414 : 0xFF7070C0)) { 
-		if (ImGui.Button(ctx.Posing.IsEnabled ? "End posing" : "Start posing", new((uis.SidebarW)-uis.BtnBig.X-4*uis.Space, uis.BtnSmall.Y)))
-			ctx.Posing.SetEnabled(!ctx.Posing.IsEnabled);
-		//}
 
-		curp.Y += uis.BtnSmall.Y + uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(uis.BtnBig.X+21);
+		ImGui.BeginGroup();
+		// TODO color for pose button
+		if (ImGui.Button(ctx.Posing.IsEnabled ? "End posing" : "Start posing", new((uis.SidebarW)-uis.BtnBig.X-5*uis.Space-10, uis.BtnSmall.Y)))
+			ctx.Posing.SetEnabled(!ctx.Posing.IsEnabled);
+
+		ImGui.BeginGroup();
 		if(lui.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall, "Time and day settings"))
 			dbg("env settings");
 
-		curp.X += uis.BtnSmall.X+uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
 			dbg("Settings");
 
-		curp.X += uis.BtnSmall.X+3*uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
 			dbg("Increase ui scaling");
 
-		curp.X += uis.BtnSmall.X+uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
 			dbg("decrease ui scaling");
 
-		curp.X += uis.BtnSmall.X+3*uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Undo, "Undo", uis.BtnSmall, "Undo"))
 			this.ctx.Actions.History.Undo();
 		
-		curp.X += uis.BtnSmall.X+uis.Space;
-		ImGui.SetCursorPos(curp);
+		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Redo, "Redo", uis.BtnSmall, "Redo"))
 			this.ctx.Actions.History.Redo();
-
+		ImGui.EndGroup();
+		ImGui.EndGroup();
+		ImGui.Dummy(new(0, uis.Space));
 	}
 	private void DrawWidgetSelector() {
+		// TODO pending UX collection
 		//if (lui.BtnIcon(FontAwesomeIcon.Brain, "WMContext", uis.BtnSmall, "Smart widgets"))
 		//	dbg("Contextual");
 		//ImGui.SameLine();
@@ -239,5 +233,5 @@ public class LazyImgui : KtisisWindow {
 
 	// Utilities
 
-	private void dbg(string s) => Ktisis.Log.Debug(s);
+	private void dbg(string s) => Ktisis.Log.Debug($"LazyImgui: {s}");
 }
