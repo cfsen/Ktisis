@@ -12,6 +12,9 @@ using Ktisis.Interface.Components.Workspace;
 using Ktisis.LazyExtras.Interfaces;
 using Ktisis.Scene.Decor;
 using Ktisis.Scene.Entities;
+using Ktisis.Scene.Entities.Game;
+using Ktisis.Scene.Entities.Skeleton;
+using Ktisis.Scene.Entities.World;
 
 using System;
 using System.Collections.Generic;
@@ -33,8 +36,10 @@ class NodeSelectWidget :ILazyWidget {
 
 	private LazyUi lui;
 	private LazyUiSizes uis;
+	private bool filterActors = false;
+	private bool filterLights = false;
 
-	public NodeSelectWidget(IEditorContext ctx, bool filterActors = false) {
+	public NodeSelectWidget(IEditorContext ctx) {
 
 		this._ctx = ctx;
 		this._dragDrop = new SceneDragDropHandler(ctx);
@@ -47,19 +52,68 @@ class NodeSelectWidget :ILazyWidget {
 		this.SupportsToolbelt = false;
 		this.SizeToolbelt = Vector2.Zero;
 	}
+	private void dbg(string s) => Ktisis.Log.Debug(s);
 	public void UpdateScaling() {
 		// Doesn't need to :)
 	}
 	public void Draw() {
 		ImGui.BeginGroup();
-		lui.DrawHeader(FontAwesomeIcon.AddressBook, "Actor tree");
+		lui.DrawHeader(FontAwesomeIcon.AddressBook, "Entity tree");
+		DrawTreeButtons();
 		this.Draw(500.0f);
+		DrawFilterControl();
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}
 
-	// For testing purposes
+	private void DrawFilterControl() {
+		ImGui.BeginGroup();
+		ImGui.Checkbox("Actors", ref filterActors);
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(uis.SidebarW/2);
+		ImGui.Checkbox("Lights", ref filterLights);
+		ImGui.Dummy(new(0,uis.Space));
+		ImGui.EndGroup();
+	}
+	private void DrawTreeButtons() {
+		//menu.Action("Target", actor.Actor.SetGPoseTarget)		// y
+		//	.Separator()
+		//	.Action("Import pose", () => this.Ui.OpenPoseImport(actor))	// YOINK
+		//	.Action("Export pose", () => this.ExportPose(actor.Pose))	// YOINK
+		ImGui.BeginGroup();
+		if(lui.BtnIcon(FontAwesomeIcon.PersonCirclePlus, "WNodeTreeSpawnActor", uis.BtnSmall, "Spawn actor"))
+			this._ctx.Scene.Factory.CreateActor().Spawn();
+		ImGui.SameLine();
+		if(lui.BtnIcon(FontAwesomeIcon.Lightbulb, "WNodeTreeSpawnLight", uis.BtnSmall, "Spawn light"))
+			 this._ctx.Scene.Factory.CreateLight(Structs.Lights.LightType.SpotLight).Spawn();
+		ImGui.SameLine();
 
+		ImGui.SetCursorPosX(uis.SidebarW/2);
+		DrawTreeActorButtons();
+
+		ImGui.Dummy(new(0,uis.Space));
+		ImGui.EndGroup();
+	}
+
+	private void DrawTreeActorButtons() {
+		if(_ctx.Selection.GetSelected() is not ActorEntity ae) return;
+		using (ImRaii.Disabled(_ctx.Transform.Target == null || !_ctx.Posing.IsEnabled)) {
+			if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WNodeTreeLoadPose", uis.BtnSmall, "Load pose"))
+				_ctx.Interface.OpenPoseImport(ae);	// TODO glib dependency
+			ImGui.SameLine();
+			if(lui.BtnIcon(FontAwesomeIcon.Save, "WNodeTreeSavePose", uis.BtnSmall, "Save pose"))
+				ExportPose(ae.Pose);		// TODO
+			ImGui.SameLine();
+			if(lui.BtnIcon(FontAwesomeIcon.LocationCrosshairs, "WNodeTreeTarget", uis.BtnSmall, "Save pose"))
+				ae.Actor.SetGPoseTarget();
+		}
+	}
+
+	// TODO
+	private async void ExportPose(EntityPose? pose) {
+		if (pose == null) return;
+		await _ctx.Interface.OpenPoseExport(pose);
+	}
 	// Draw frame
 
 	public void Draw(float height) {
@@ -96,6 +150,12 @@ class NodeSelectWidget :ILazyWidget {
 		var spacing = ImGui.GetStyle().ItemSpacing;
 		using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing with { Y = 5.0f });
 		// TODO filtering can be done here
+		var items = this._ctx.Scene.Children;
+		if(filterActors)
+			items = items.Where(x => x is not ActorEntity);
+		if(filterLights)
+			items = items.Where(x => x is not LightEntity);
+		if(!items.Any()) return;
 		this.IterateTree(this._ctx.Scene.Children);
 	}
 
