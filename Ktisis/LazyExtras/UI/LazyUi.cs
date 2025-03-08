@@ -133,7 +133,7 @@ public struct LazyUiSizes {
 	public LazyUiSizes() {
 		bBtnSmall = new(37, 37);
 		bBtnSmaller = new(22, 22);
-		bBtnBig = new(79, 79);
+		bBtnBig = new(77, 77);
 		bSpace = 5.0f;
 		Scale = ImGui.GetIO().FontGlobalScale;
 		SidebarFactor = 1/7.0f;
