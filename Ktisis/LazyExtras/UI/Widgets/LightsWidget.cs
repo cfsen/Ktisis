@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.ImGuiFileDialog;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.ImGuiFileDialog;
 
 using ImGuiNET;
 
@@ -40,15 +41,26 @@ class LightsWidget :ILazyWidget {
 	public void Draw() {
 		if(dialogOpen)
 			ctx.LazyExtras.io.DrawDialog();
-		
+
+		ImGui.BeginGroup();
+
+		lui.DrawHeader(FontAwesomeIcon.Lightbulb, "Lights");
+		DrawPresetSpawnControls();
+		DrawImportExportControls();
+		lui.DrawFooter();
+
+		ImGui.EndGroup();
+	}
+
+	private void DrawPresetSpawnControls() {
 		ImGui.Text("Spawn preset");
 		if(ImGui.Button("3 point"))
 			ctx.LazyExtras.lights.SpawnStudioLights();
 		ImGui.SameLine();
 		if(ImGui.Button("Apartment exterior"))
 			ctx.LazyExtras.lights.SpawnStudioApartmentAmbientLights();
-		ImGui.Separator();
-
+	}
+	private void DrawImportExportControls() {
 		ImGui.Text("Import/Export");
 		if(ImGui.Button("Export")) {
 			dialogOpen = true;
@@ -89,6 +101,5 @@ class LightsWidget :ILazyWidget {
 		if(ImGui.Button("Remove all lights"))
 			ctx.LazyExtras.lights.LightsDeleteAll();
 	}
-
 	private void dbg(string s) => Ktisis.Log.Debug($"LightsWidget: {s}");
 }

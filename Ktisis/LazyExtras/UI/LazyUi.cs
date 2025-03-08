@@ -29,6 +29,7 @@ class LazyUi {
 	// Widget utility
 
 	public void DrawHeader(FontAwesomeIcon icon, string header) {
+		ImGui.Dummy(new(0, uis.BtnSmaller.Y/5));
 		ImGui.Spacing();
 		using(ImRaii.PushFont(UiBuilder.IconFont)) {
 			ImGui.Text(icon.ToIconString());
@@ -100,7 +101,7 @@ class LazyUi {
 	}
 
 	internal void DrawFooter() {
-		ImGui.Spacing();
+		ImGui.Dummy(new(0, uis.BtnSmaller.Y/2));
 	}
 }
 
