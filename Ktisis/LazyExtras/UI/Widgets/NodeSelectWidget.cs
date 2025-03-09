@@ -36,8 +36,8 @@ class NodeSelectWidget :ILazyWidget {
 
 	private LazyUi lui;
 	private LazyUiSizes uis;
-	private bool filterActors = false;
-	private bool filterLights = false;
+	private bool filterActors = true;
+	private bool filterLights = true;
 
 	public NodeSelectWidget(IEditorContext ctx) {
 
@@ -98,9 +98,9 @@ class NodeSelectWidget :ILazyWidget {
 	private void DrawTreeActorButtons() {
 		if(_ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
 		using (ImRaii.Disabled(_ctx.LazyExtras.SelectedActor == null || !_ctx.Posing.IsEnabled)) {
-			if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WNodeTreeLoadPose", uis.BtnSmall, "Load pose"))
-				_ctx.Interface.OpenPoseImport(ae);	// TODO glib dependency
-			ImGui.SameLine();
+			//if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WNodeTreeLoadPose", uis.BtnSmall, "Load pose"))
+			//	_ctx.Interface.OpenPoseImport(ae);	// TODO glib dependency
+			//ImGui.SameLine();
 			if(lui.BtnIcon(FontAwesomeIcon.Save, "WNodeTreeSavePose", uis.BtnSmall, "Save pose"))
 				ExportPose(ae.Pose);		// TODO
 			ImGui.SameLine();
@@ -149,14 +149,16 @@ class NodeSelectWidget :ILazyWidget {
 
 		var spacing = ImGui.GetStyle().ItemSpacing;
 		using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, spacing with { Y = 5.0f });
+
 		// TODO filtering can be done here
+
 		var items = this._ctx.Scene.Children;
-		if(filterActors)
+		if(!filterActors)
 			items = items.Where(x => x is not ActorEntity);
-		if(filterLights)
+		if(!filterLights)
 			items = items.Where(x => x is not LightEntity);
-		if(!items.Any()) return;
-		this.IterateTree(this._ctx.Scene.Children);
+		this.IterateTree(items);
+		//this.IterateTree(this._ctx.Scene.Children);
 	}
 
 	private void IterateTree(IEnumerable<SceneEntity> entities) {

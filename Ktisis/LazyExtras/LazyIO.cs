@@ -26,7 +26,9 @@ public class LazyIO :IDisposable {
 	private bool _dialogOpen = false;
 
 	private string _readFileData = "";
+	private string _readFileName = "";
 	private string _saveBuffer = "";
+	private string _lastLoadDirectory = "";
 
 	public LazyIO(IDalamudPluginInterface dpi) {
 		_fdm = new();
@@ -39,6 +41,8 @@ public class LazyIO :IDisposable {
 
 	public void DrawDialog() => _fdm.Draw();
 	public string LoadFileData() => _readFileData;
+	public string LastLoadDirectory(bool friendly = false) => friendly ? Path.GetFileName(_lastLoadDirectory) : _lastLoadDirectory;
+	public string LoadedFileName() => _readFileName;
 	public string SetSaveBuffer(string s) => _saveBuffer = s;
 
 	// Imgui:load
@@ -46,17 +50,18 @@ public class LazyIO :IDisposable {
 	public void OpenLightDialog(Action <bool, List<string>> callback) {
 		_dialogOpen = true;
 		_fdm.OpenFileDialog("Load pose file", ".klights", 
-			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Load), 1, _cfg.LastLightDir);
+			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Load), 1, _cfg.LastLoadLightDir);
 	}
 	public void OpenPoseDialog(Action<bool, List<string>> callback) {
 		_dialogOpen = true;
+		dbg(_cfg.LastLoadPoseDir);
 		_fdm.OpenFileDialog("Load pose file", ".pose", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), 1, _cfg.LastPoseDir);
+			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), 1, _cfg.LastLoadPoseDir);
 	}
 	public void OpenPoseDirDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.OpenFolderDialog("Open pose directory", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), _cfg.LastPoseDir);
+			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), _cfg.LastLoadPoseDir);
 	}
 
 	// Imgui:save
@@ -64,12 +69,12 @@ public class LazyIO :IDisposable {
 	public void OpenLightSaveDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.SaveFileDialog("Save lights", ".klights", "Lights", ".klights", 
-			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Save), _cfg.LastLightDir);
+			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Save), _cfg.LastLoadLightDir);
 	}
 	public void OpenPoseSaveDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.SaveFileDialog("Save lights", ".klights", "Lights", ".klights", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastPoseDir);
+			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastLoadPoseDir);
 	}
 
 	// Callbacks
@@ -99,11 +104,17 @@ public class LazyIO :IDisposable {
 
 	private void HandleCallback(string items, LazyIOFlag dtype) { 
 		if(dtype.HasFlag(LazyIOFlag.Load)) {
-			dbg($"Load data from: \t{items}");
+			var loc = (_fdm.GetType()
+				.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
+				.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
+			_lastLoadDirectory = loc;
+			dbg($"Load data from: {items}");
+			_readFileName = Path.GetFileName(items);
+			dbg($"Update name of last read file: {_readFileName}");
 			_readFileData = ReadFile(items) ?? "";
 		}
 		else if(dtype.HasFlag(LazyIOFlag.Save)) {
-			dbg($"Save to file: \t{items}");
+			dbg($"Save to file: {items}");
 			SaveFile(items, _saveBuffer);
 		}
 	}
@@ -112,20 +123,20 @@ public class LazyIO :IDisposable {
 		var loc = (_fdm.GetType()
 			.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
 			.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
-
+		dbg($"UpdateLastDir called. dtype={dtype}");
 		// Update last opened directory
-		switch (dtype) {
-			case LazyIOFlag.Lights:
-				_cfg.LastLightDir = loc;
-				break;
-			case LazyIOFlag.Poses:
-				_cfg.LastPoseDir = loc;
-				break;
-			case LazyIOFlag.Expression:
-				dbg("not implemented");
-				break;
-			default: break;
+		bool load = dtype.HasFlag(LazyIOFlag.Load);
+		bool save = dtype.HasFlag(LazyIOFlag.Save);
+		bool pose = dtype.HasFlag(LazyIOFlag.Poses);
+
+		if (load && pose) {
+			_cfg.LastLoadPoseDir = loc;
 		}
+		if (save && pose)
+		{
+			_cfg.LaseSavePoseDir = loc;
+		}
+
 	}
 	// Quick access 
 
@@ -231,8 +242,10 @@ public enum LazyIOFlag {
 
 [Serializable]
 public class LazyIOSettings {
-	public string LastPoseDir { get; set; } = "";
-	public string LastLightDir { get; set; } = "";
+	public string LastLoadPoseDir { get; set; } = "";
+	public string LaseSavePoseDir { get; set; } = "";
+	public string LastLoadLightDir { get; set; } = "";
+	public string LastSaveLightDir { get; set; } = "";
 	public List<string> PoseDirectories { get; set; } = [];
 	public List<string> LightsDirectories { get; set; } = [];
 	public bool PurgeDefaultQuickAxDirs { get; set; } = false;
