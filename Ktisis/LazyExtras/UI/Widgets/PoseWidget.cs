@@ -37,6 +37,9 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			lui.DrawHeader(FontAwesomeIcon.PersonRays, "Pose utilities");
 			
 			ImGui.Text("Gaze control");
+			if (ImGui.Button("Set neutral"))
+				ctx.LazyExtras.pose.ResetGaze();
+			ImGui.SameLine();
 			if (ImGui.Button("Camera"))
 				ctx.LazyExtras.pose.SetGazeAtCurrentCamera();
 			ImGui.SameLine();
@@ -46,9 +49,6 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			if (ImGui.Button("Look at"))
 				ctx.LazyExtras.pose.SetGazeAtWorldTarget();
 			ImGui.SameLine();
-			if (ImGui.Button("Reset gaze"))
-				ctx.LazyExtras.pose.ResetGaze();
-
 			ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
 
 			ImGui.Text("Bone overlay");
@@ -61,6 +61,7 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			if (ImGui.Button("Hide all"))
 				ctx.LazyExtras.pose.HideAllBones();
 			ImGui.Spacing();
+			ImGui.Text("Misc");
 			if (ImGui.Button("Set expression export pose"))
 				ctx.LazyExtras.pose.SetPartialReference();
 

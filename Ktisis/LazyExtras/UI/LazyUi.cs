@@ -79,9 +79,9 @@ class LazyUi {
 
 	public bool Btn(string s, string id, Vector2 size, string tooltip) {
 		bool res;
-		using (ImRaii.PushFont(UiBuilder.IconFont)){ 
+		//using (ImRaii.PushFont(UiBuilder.IconFont)){ 
 			res = ImGui.Button($"{s}###{id}", size);
-			};
+			//};
 		if (ImGui.IsItemHovered())
 			using (ImRaii.Tooltip()) {
 				ImGui.Text(tooltip);

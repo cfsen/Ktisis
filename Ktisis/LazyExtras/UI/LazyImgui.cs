@@ -69,12 +69,12 @@ public class LazyImgui : KtisisWindow {
 
 	private void Initialize() {
 		this.Widgets = [
-			//new DemoWidget(),
 			new PoseFaceWidget(ctx, tex),
 			new PoseWidget(ctx),
 			new LightsWidget(ctx),
 			new CameraWidget(ctx),
 			new TransformWidget(ctx),
+			new PoseLoadWidget(ctx),
 			new NodeSelectWidget(ctx),
 			new WindowsWidget(ctx)
 			];
@@ -105,7 +105,7 @@ public class LazyImgui : KtisisWindow {
 			case false:
 				this.DrawWorkspace();
 				this.DrawWidgetSelector();
-				ImGui.BeginChild("ScrollingRegion", new(uis.SidebarW-2*uis.Space, uis.ScreenDimensions.Y-uis.BtnBig.Y-uis.BtnSmall.Y-4*uis.Space), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+				ImGui.BeginChild("ScrollingRegion", new(uis.SidebarW-2*uis.Space, uis.ScreenDimensions.Y-uis.BtnBig.Y-2*uis.BtnSmall.Y-5*uis.Space), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
 				this.DrawWidgets();
 				ImGui.EndChild();
 				break;
@@ -198,6 +198,7 @@ public class LazyImgui : KtisisWindow {
 		ImGui.EndGroup();
 		ImGui.EndGroup();
 		ImGui.Dummy(new(0, uis.Space));
+
 	}
 	private void DrawWidgetSelector() {
 		// TODO pending UX collection
@@ -231,6 +232,7 @@ public class LazyImgui : KtisisWindow {
 		if (lui.BtnIconState(FontAwesomeIcon.EllipsisH, "WMMisc", uis.BtnSmall, "Misc widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Misc), 0xFF545253, 0xFF003300))
 			widgetFilter = widgetFilter ^ LazyWidgetCat.Misc;
+		lui.DrawHeader(FontAwesomeIcon.Crosshairs, (ctx.LazyExtras.SelectedActor?.Name ?? "No target"));
 	}
 
 	// Utilities
