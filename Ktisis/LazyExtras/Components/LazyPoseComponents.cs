@@ -13,33 +13,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
+using Ktisis.LazyExtras.Datastructures;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using System.Diagnostics;
+using Ktisis.Editor.Transforms.Types;
+
 namespace Ktisis.LazyExtras.Components;
-
-public struct WorldTransformData {
-	public Matrix4x4 LocalToWorld { get; init; }
-	public Matrix4x4 LocalToWorld_Position { get; init; }
-	public Matrix4x4 LocalToWorld_Rotation { get; init; }
-
-	public Matrix4x4 WorldToLocal { get; init; }
-	public Matrix4x4 WorldToLocal_Position { get; init; }
-	public Matrix4x4 WorldToLocal_Rotation { get; init; }
-}
-
-
+/*
+ * REFAC TODO
+ * - Get rid of direct checking for valid actor; use lazyextras.selectedactor instead.
+ *		- Meaning this class should simply accept an ActorEntity as input, nothing more.
+ * - There's a solid bit of redundant Linq in how transforms are done.
+ *		- Streamline this and minimize resource usage
+ *		- Do you even want to use linq vs. passing a list of needles and iterating? HashSet should be faster?
+ * */
 public class LazyPoseComponents {
-	private readonly IEditorContext _ctx;
+	private IEditorContext ctx;
+
+	private LazyMaths mathx;
+
 	public Vector3 TargetLookPosition = Vector3.Zero;
 
-	//private Matrix4x4 _dbgM4 = Matrix4x4.Identity;
-	//private Matrix4x4 _dbgM4_2 = Matrix4x4.Identity;
-	//private Matrix4x4 _dbgM4_3 = Matrix4x4.Identity;
-	//private Matrix4x4 _dbgM4_4 = Matrix4x4.Identity;
-
-	// Pre-emptive implementation of an offset angle to apply when using head orientation for neutral gaze
+	// TODO Pre-emptive implementation of an offset angle to apply when using head orientation for neutral gaze
 	public float neutralEyeHeadOffset = 0.0f;
 
-	public LazyPoseComponents(IEditorContext ctx) {
-		this._ctx = ctx;
+	public LazyPoseComponents(IEditorContext _ctx, LazyMaths _math) {
+		this.ctx = _ctx;
+
+		this.mathx = _math;
 	}
 
 	// Gaze control
@@ -49,44 +50,40 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetWorldGazeTarget() {
 		// Grab postion from UI selection
-		if(this._ctx.Transform.Target?.GetTransform()?.Position is not Vector3 target) return;
+		if(this.ctx.Transform.Target?.GetTransform()?.Position is not Vector3 target) return;
 		this.TargetLookPosition = target;
 	}
 
 	/// <summary>
 	/// Resets an actors gaze to a neutral position, determined by the orientation of the head.
 	/// </summary>
-	public void ResetGaze() {
-		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
-		//if(this.ResolveActorEntity() is not ActorEntity ae) return;
-		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
+	public void ResetGaze(ActorEntity ae) {
+		var children = ae.Recurse().ToList();
 		
-		this.SetEyesTransform(ae, eyes[0], eyes[1]);
+		if(this.GetEyesNeutral(children) is not List<Transform> eyes) return;
+		
+		this.SetEyesTransform(children, eyes[0], eyes[1]);
 	}
 
 	/// <summary>
 	/// Sets the gaze of the current ActorEntity at the point in space set by SetWorldGazeTarget.
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
-	public void SetGazeAtWorldTarget(){
-		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
-		//if(this.ResolveActorEntity() is not ActorEntity ae) return;	
-		
+	public void SetGazeAtWorldTarget(ActorEntity ae){
+		var children = ae.Recurse().ToList();
 		// Use set position from SetWorldGazeTarget as target
-		this.SetGaze(ae, this.TargetLookPosition);
+		this.SetGaze(children, this.TargetLookPosition);
 	}
 
 	/// <summary>
 	/// Sets the gaze of the current ActorEntity at the point in space occupied by the current camera.
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
-	public void SetGazeAtCurrentCamera(){
-		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
-		//if(this.ResolveActorEntity() is not ActorEntity ae) return;	
-
+	public void SetGazeAtCurrentCamera(ActorEntity ae){
 		// Grab postion from current camera
-		if(this._ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
-		this.SetGaze(ae, target);
+		if(this.ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
+		var children = ae.Recurse().ToList();
+		this.SetGaze(children, target);
 	}
 
 	// Gaze logic 
@@ -96,7 +93,7 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <param name="ae">ActorEntity to pose</param>
 	/// <param name="worldTarget">Point in world space for ActorEntity to look at</param>
-	private void SetGaze(ActorEntity ae, Vector3 worldTarget) {
+	private void SetGaze(List<SceneEntity> ae, Vector3 worldTarget) {
 		/*
 		Using the head bone as a reference orientation, perform target and rotation
 		calculations in local space. Then transform the new orientation back into world
@@ -107,11 +104,11 @@ public class LazyPoseComponents {
 
 		// Iterate over both eyes.
 		for(int i = 0; i < 2; i++) {
-			if(this.CalcWorldMatrices(eyes[i].Rotation, eyes[i].Position, out var wtd)) {
+			if(this.mathx.CalcWorldMatrices(eyes[i].Rotation, eyes[i].Position, out var wtd)) {
 				// Local space allows starting with an identity matrix
 				var id = Matrix4x4.Identity;
 				var target = Vector3.Transform(worldTarget, wtd.WorldToLocal);
-				var rot = VectorAngles(target);
+				var rot = this.mathx.VectorAngles(target);
 
 				// Limit eye rotation
 				this.EyesAngleClamp(ref rot);
@@ -135,11 +132,11 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <param name="rot">Result from VectorAngles()</param>
 	private void EyesAngleClamp(ref Vector3 rot) {
-		//dp($"{rot.X*180/MathF.PI} / {rot.Y*180/MathF.PI} / {rot.Z*180/MathF.PI}");
-		float eyeMaxYaw = this.DegToRad(42.0f);
-		float eyeMinYaw = this.DegToRad(-36.0f);
-		float eyeMaxPitch = this.DegToRad(24.0f);
-		float eyeMinPitch = this.DegToRad(-42.0f);
+		//dbg($"{rot.X*180/MathF.PI} / {rot.Y*180/MathF.PI} / {rot.Z*180/MathF.PI}");
+		float eyeMaxYaw = this.mathx.DegToRad(42.0f);
+		float eyeMinYaw = this.mathx.DegToRad(-36.0f);
+		float eyeMaxPitch = this.mathx.DegToRad(24.0f);
+		float eyeMinPitch = this.mathx.DegToRad(-42.0f);
 		rot.X = Math.Clamp(rot.X, eyeMinYaw, eyeMaxYaw);
 		rot.Z = Math.Clamp(rot.Z, eyeMinPitch, eyeMaxPitch);
 	}
@@ -150,10 +147,10 @@ public class LazyPoseComponents {
 	/// <param name="ae">ActorEntity to operate on</param>
 	/// <param name="left">Transform for the left eye</param>
 	/// <param name="right">Transform for the right eye</param>
-	private void SetEyesTransform(ActorEntity ae, Transform left, Transform right) {
-		this._ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
-			if(ae.Recurse()
-				.Where(x => x is BoneNode 
+	private void SetEyesTransform(List<SceneEntity> ae, Transform left, Transform right) {
+		this.ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
+			// TODO memento
+			if(ae.Where(x => x is BoneNode 
 				&& (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
 				.ToList() 
 				is not List<SceneEntity> eyes || eyes.Count < 1
@@ -173,7 +170,7 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <param name="ae">ActorEntity owner of 'Head'</param>
 	/// <returns>List of Transform on success, null on failure.</returns>
-	private List<Transform>? GetEyesNeutral(ActorEntity ae) {
+	private List<Transform>? GetEyesNeutral(List<SceneEntity> ae) {
 		if(this.GetHeadOrientation(ae) is not Matrix4x4 head) return null;
 		if(this.GetEyesCurrent(ae) is not List<Transform> eyes) return null;
 		// This is the groundwork for orienting the eyes to other directions
@@ -191,7 +188,7 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <param name="ae">ActorEntity owner of eyes</param>
 	/// <returns>List of Transform on success (Left at idx=0), null on failure.</returns>
-	private List<Transform>? GetEyesCurrent(ActorEntity ae) {
+	private List<Transform>? GetEyesCurrent(List<SceneEntity> ae) {
 		if(this.GetTransformByBoneName(ae, "Left Eye") is not Transform left) return null;
 		if(this.GetTransformByBoneName(ae, "Right Eye") is not Transform right) return null;
 		return [left, right];
@@ -202,8 +199,8 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <param name="ae">ActorEntity owner of the head</param>
 	/// <returns>Matrix4x4 on success, null on failure.</returns>
-	private Matrix4x4? GetHeadOrientation(ActorEntity ae) { // 
-		if(ae.Recurse().Where(x => x.Name == "Head" && x is BoneNode && x is not BoneNodeGroup).FirstOrDefault() is not BoneNode head) return null;
+	private Matrix4x4? GetHeadOrientation(List<SceneEntity> ae) { // 
+		if(ae.FirstOrDefault(x => x.Name == "Head" && x is BoneNode && x is not BoneNodeGroup) is not BoneNode head) return null;
 		if(head.GetTransform() is not Transform t) return null;
 		return Matrix4x4.CreateFromQuaternion(t.Rotation);
 	}
@@ -214,10 +211,8 @@ public class LazyPoseComponents {
 	/// <param name="ae">ActorEntity to search</param>
 	/// <param name="boneName">BoneNode.Name to search for</param>
 	/// <returns>Transform on success, null on failure.</returns>
-	private Transform? GetTransformByBoneName(ActorEntity ae, string boneName) {
-		SceneEntity? x = ae.Recurse()
-			.Where(x => x is BoneNode && x.Name == boneName)?
-			.FirstOrDefault() ?? null;
+	private Transform? GetTransformByBoneName(List<SceneEntity> ae, string boneName) {
+		SceneEntity? x = ae.FirstOrDefault(x => x is BoneNode && x.Name == boneName) ?? null;
 		if (x == null) return null;
 		if(x is not ITransform t) return null;
 
@@ -229,7 +224,7 @@ public class LazyPoseComponents {
 	/// </summary>
 	/// <returns>Vector3 on success, null on failure.</returns>
 	private Vector3? CalcCameraPosition() {
-		if (this._ctx.Cameras.Current is not EditorCamera ec) return null;
+		if (this.ctx.Cameras.Current is not EditorCamera ec) return null;
 		Vector3 target = Vector3.Zero;
 		if (ec.FixedPosition != null)
 			target += ec.FixedPosition ?? Vector3.Zero;
@@ -239,103 +234,29 @@ public class LazyPoseComponents {
 		return target;
 	}
 
-	// Local/World space logic
-
-	/// <summary>
-	/// Generates world-local and inverse transformation matrices and populates `result`.
-	/// </summary>
-	/// <param name="q">Orientation of local space</param>
-	/// <param name="pos">Position of local space in world space</param>
-	/// <param name="result">Struct housing matrices</param>
-	/// <returns>true on success, false if matrices cannot be inverted.</returns>
-	private bool CalcWorldMatrices(Quaternion q, Vector3 pos, out WorldTransformData result) {
-		Matrix4x4 m = Matrix4x4.CreateFromQuaternion(q);
-		Matrix4x4 mp = Matrix4x4.CreateTranslation(pos);
-		if(!Matrix4x4.Invert(m, out Matrix4x4 m_inv)) {
-			dp("Could not compute m_inv!");
-			result = default;
-			return false;
-		}
-		if(!Matrix4x4.Invert(mp, out Matrix4x4 mp_inv)) {
-			dp("Could not compute mp_inv!");
-			result = default;
-			return false;
-		}
-		// mp * m // Local to world
-		// m_inv * mp_inv // World to local
-
-		result = new WorldTransformData {
-			LocalToWorld = mp * m,
-			LocalToWorld_Position = mp,
-			LocalToWorld_Rotation = m,
-
-			//WorldToLocal = m_inv * mp_inv,
-			WorldToLocal = mp_inv * m_inv,
-			WorldToLocal_Position = mp_inv,
-			WorldToLocal_Rotation = m_inv
-		};
-
-		//return m_inv *= mp_inv;
-		return true;
+	// TODO test
+	public void dbgTestGAT(ActorEntity ae) {
+		HashSet<string> needles = new HashSet<string>{"Abdomen", "Waist"};
+		Stopwatch dwatch = Stopwatch.StartNew();
+		GetActorTransforms(ae, needles);
+		dwatch.Stop();
+		dbg($"time: {dwatch.ElapsedTicks} ticks");
 	}
+	public List<(string name, ITransform xfm)>? GetActorTransforms(ActorEntity ae, HashSet<string> needles) {
+		int found = 0;
+		List<(string name, ITransform xfm)> results = [];
 
-	// Overlay visibility 
-
-	/// <summary>
-	/// Toggles overlay visibility of essential gesture bones
-	/// </summary>
-	public void ToggleGestureBones() {
-		if (this.ResolveActorEntity() is not ActorEntity selected) return;
-
-		var bones = new List<string>(){"Abdomen", "Waist", "Lumbar", "Thoracic", "Cervical", "Head", "Neck",
-			"Left Shoulder (Twist)", "Left Arm", "Left Forearm", "Left Hand", "Left Clavicle",
-			"Right Shoulder (Twist)", "Right Arm", "Right Forearm", "Right Hand", "Right Clavicle",
-			"Left Leg", "Left Calf", "Left Knee", "Left Foot",
-			"Right Leg", "Right Calf", "Right Knee", "Right Foot"};
-
-		this.ToggleBones(selected, bones);
-	}
-	
-	/// <summary>
-	/// Toggles extra bones for gestures
-	/// </summary>
-	public void ToggleGestureDetailBones() {
-		if (this.ResolveActorEntity() is not ActorEntity selected) return;
-
-		var bones = new List<string>() { "Left Toes", "Right Toes", "Left Wrist", "Right Wrist" };
-
-		this.ToggleBones(selected, bones);
-	}
-
-	/// <summary>
-	/// Toggles the overlay visibility of bones in supplied list 
-	/// </summary>
-	/// <param name="selected">ActorEntity to toggle overlay for</param>
-	/// <param name="bones">Names of bones to toggle</param>
-	private void ToggleBones(ActorEntity selected, List<string> bones) {
-		var nodes = selected.Recurse().Where(s => s.Type == EntityType.BoneNode);
-		foreach (var x in nodes) {
-			if (x is IVisibility vis && bones.Contains(x.Name) && x is not BoneNodeGroup) {
-				if(x.Parent is EntityPose) continue; // Skip toggling weapon
-				vis.Toggle();
+		foreach(var child in ae.Recurse()) {
+			if(needles.Contains(child.Name) && child is ITransform xfmc) {
+				results.Add((child.Name, xfmc));
+				found++;
 			}
+			if(found == needles.Count) break;
 		}
-	}
 
-	/// <summary>
-	/// Turns off visibility for all overlay bones for the currently selected actor
-	/// </summary>
-	public void HideAllBones() {
-		var selected = this.ResolveActorEntity();
-		if (selected == null)
-			return;
-		var nodes = selected.Recurse();
-		foreach (var x in nodes) {
-			if (x is IVisibility vis) {
-				if (vis.Visible)
-					vis.Toggle();
-			}
-		}
+		if(found != needles.Count) return null;
+
+		return results;
 	}
 
 	// Partial reference pose loading
@@ -345,15 +266,15 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetPartialReference() {
 		// Early return if no ActorEntity or head/neck can't be selected.
-		if(this.ResolveActorEntity() is not ActorEntity selected) return;
+		if(this.ctx.LazyExtras.ResolveActorEntity() is not ActorEntity selected) return;
 		if(selected.Recurse()
-			.Where(x => x.Name == "Head" && x is BoneNodeGroup)
-			.FirstOrDefault() is not SceneEntity neck) return;
+			.FirstOrDefault(x => x.Name == "Head" && x is BoneNodeGroup)
+			is not SceneEntity neck) return;
 		if(selected.Recurse()
-			.Where(x => x.Name == "Head" && x is not BoneNodeGroup)
-			.FirstOrDefault() is not SceneEntity head) return;
+			.FirstOrDefault(x => x.Name == "Head" && x is not BoneNodeGroup)
+			is not SceneEntity head) return;
 
-		this._ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
+		this.ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
 			// Save current and set reference pose
 			var epc = new EntityPoseConverter(selected.Pose!);
 			var org = epc.Save();
@@ -361,7 +282,7 @@ public class LazyPoseComponents {
 			var fin = epc.Save();
 
 			// Load the original expression by loading bones from the head BoneNodeGroup 
-			this._ctx.Selection.Select(neck);
+			this.ctx.Selection.Select(neck);
 			var gsb = epc.GetSelectedBones(false).ToList();
 			epc.LoadSelectedBones(org, PoseTransforms.Position | PoseTransforms.Rotation);
 
@@ -372,181 +293,14 @@ public class LazyPoseComponents {
 
 			// Rotate the head back into position
 			// Change selection to head bone and rotate it to reference pose
-			this._ctx.Selection.Select(head);
+			this.ctx.Selection.Select(head);
 			gsb = epc.GetSelectedBones(false).ToList();
 			epc.LoadBones(fin, gsb, PoseTransforms.Rotation);
 		});
 	}
 
-	// Target resolving
-
-	/// <summary>
-	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
-	/// </summary>
-	/// <returns>Selected ActorEntity on success, null on failure.</returns>
-	public ActorEntity? ResolveActorEntity() {
-		// Resolves the parent actor entity of any bone. Recursion warning.
-		var selected = this._ctx.Selection.GetSelected().FirstOrDefault();
-		if (selected == null)
-			return null;
-
-		ActorEntity? actor = this.Backtrack(selected, 0, 10);
-		if (actor != null)
-			return actor;
-		return null;
-	}
-
-	/// <summary>
-	/// Recursive function for ResolveActorEntity()
-	/// </summary>
-	/// <param name="node">Current node</param>
-	/// <param name="depth">Current depth</param>
-	/// <param name="maxdepth">Max depth</param>
-	/// <returns>ActorEntity on success, null on failure.</returns>
-	private ActorEntity? Backtrack(object node, int depth = 0, int maxdepth = 0) {
-		// Recursion used in ResolveActorEntity.
-		if (node is ActorEntity ae)
-			return ae;
-		if (depth >= maxdepth)
-			return null;
-
-		var parentProperty = node.GetType().GetProperty("Parent");
-		if (parentProperty == null)
-			return null;
-
-		var parent = parentProperty.GetValue(node);
-		if (parent != null)
-		{
-			var res = Backtrack(parent, depth+1, maxdepth);
-			if (res != null)
-				return res;
-		}
-		return null;
-	}
-
 	// Debug
 
-	private static void dp(string s) => Ktisis.Log.Debug(s); 
-	//public void SelectEyeBall() {
-	//	var actor = this._ctx.Scene.Recurse().Where(x => x is ActorEntity).FirstOrDefault();
-	//	if(actor == null) return;
-	//	var eye = actor.Recurse().Where(x => x.Name == "Left Eye" && x is BoneNode).FirstOrDefault();
-	//	if(eye == null) return;
-	//	this._ctx.Selection.Select(eye);
-	//}
+	private static void dbg(string s) => Ktisis.Log.Debug($"LazyPoseComp: {s}"); 
 
-	// M4 helpers
-
-	// // TODO saved for future debug
-	//public void dbgCsM4() {
-	//	this.DrawM4Table(this._dbgM4, "FIRST");
-	//	//ImGui.Text(this.dbgV3(this._dbgM4.Translation));
-	//	this.DrawM4Table(this._dbgM4_2, "SECOND");
-	//	//ImGui.Text(this.dbgV3(this._dbgM4_2.Translation));
-	//	this.DrawM4Table(this._dbgM4_3, "THIRD");
-	//	//ImGui.Text(this.dbgV3(this._dbgM4_3.Translation));
-	//	this.DrawM4Table(this._dbgM4_2, "FOURTH");
-	//}
-
-	//// Saved for future debug
-	//public void dbgMatrixInspector(string bone) {
-	//	if(this.ResolveActorEntity() is not ActorEntity ae) return;
-	//	if(ae.Recurse().Where(x => x.Name == bone && x is BoneNode).FirstOrDefault() is not BoneNode bn) return;
-	//	var m = Matrix4x4.CreateFromQuaternion(Quaternion.Normalize(bn.GetTransform()?.Rotation ?? Quaternion.Identity));
-	//	//dp(m[0,0].ToString());
-	//	//dp(m.ToString());
-	//	//dp("Okay");
-	//	this.DrawM4Table(m, bn.Name);
-	//	Matrix4x4 mi = new Matrix4x4();
-	//	if(Matrix4x4.Invert(m, out mi)) {
-	//		this.DrawM4Table(mi, bn.Name + "(inv)");
-	//		this.DrawM4Table(Matrix4x4.Multiply(m, mi), "A*A^-1");
-	//	}
-
-	//}
-
-	//// Saved for future debug
-	//private void DrawM4Table(Matrix4x4 m, string lbl) {
-	//	ImGui.Text(lbl);
-	//	if(ImGui.BeginTable($"{lbl}###{lbl}", 4)) {
-	//		int i = 0, r = 0, c = 0;
-	//		for(i = 0; i < 16; i++) {
-	//			ImGui.TableNextColumn();
-	//			ImGui.Text(m[r,c].ToString());
-	//			if(c == 3) { r++; c=0; }
-	//			else c++;
-	//		}
-	//		ImGui.EndTable();
-	//	}
-	//}
-
-	// Support functions
-
-	/// <summary>
-	/// Determines angles of a vector in 3 planes.
-	/// </summary>
-	/// <param name="u">Vector to deconstruct</param>
-	/// <param name="degrees">Return result in degrees</param>
-	/// <returns>Vector3 containing angles.</returns>
-	public static Vector3 VectorAngles(Vector3 u, bool degrees = false) {
-		Vector3 len = new() {
-			X = MathF.Max(MathF.Sqrt(u.X * u.X + u.Z * u.Z), float.Epsilon),
-			Y = MathF.Max(MathF.Sqrt(u.Y * u.Y + u.Z * u.Z), float.Epsilon),
-			Z = MathF.Max(MathF.Sqrt(u.X * u.X + u.Y * u.Y), float.Epsilon)
-		};
-
-		Vector3 s = new() {X=float.Sign(u.X), Y=float.Sign(u.Y), Z=float.Sign(u.Z)};
-
-		//dp("u=" + u.ToString());
-		//dp("s= " + s.ToString());
-
-		//// Determine which quadrant is being targeted. Left for debug purposes.
-		//int[] quad = [0,0,0,0]; // Quad 1,2,3,4
-
-		//if(s.Y >= 0 && s.Z >= 0)		quad[0] ^= 1;	// Quad 1
-		//else if(s.Y >= 0 && s.Z < 0)	quad[1] ^= 1;	// Quad 2
-		//else if(s.Y < 0 && s.Z < 0)		quad[2] ^= 1;	// Quad 3
-		//else if(s.Y < 0 && s.Z >= 0)	quad[3] ^= 1;	// Quad 4
-
-		//// All X<0 are invalid, TODO this should be handled better
-		//if(s.X < 0) quad = [0,0,0,0];
-
-		//dp($"quad: [{string.Join(", ", quad)}]");
-
-		// Initial angle calc
-		Vector3 o = new() {
-			X = MathF.Acos(u.X / len.X),	// XZ-plane maps to rotation around Y axis, yaw = cos(x) || sin(z)
-			Y = MathF.Acos(u.Z / len.Y),	// YZ-plane maps to rotation around X axis, pitch = cos(z) || sin(y)
-			Z = MathF.Acos(u.X / len.Z)		// XY-plane mapts to rotation around Z axis, roll = cos(x) || sin(y)
-		};
-
-		// Adjust for quad
-		if((s.Y >= 0 && s.Z >= 0) || (s.Y < 0 && s.Z >= 0))
-			o.X *= -1.0f;
-		if((s.Y < 0 && s.Z >= 0) || (s.Y < 0 && s.Z < 0))
-			o.Z *= -1.0f;
-		if(s.X < 0) {
-			o.X += MathF.PI;
-			o.X *= -1.0f;
-		}
-
-		//dp($"Y: {o.X*180/MathF.PI} P: {o.Y*180/MathF.PI} R: {o.Z*180/MathF.PI}");
-
-		// Conversion
-		if (degrees) {
-			o.X *= 180 / MathF.PI;
-			o.Y *= 180 / MathF.PI;
-			o.Z *= 180 / MathF.PI;
-		}
-
-		return o;
-	}
-	private double RadToDeg(double rad) => this.RadToDeg((float)rad);
-	private double DegToRad(double deg) => this.DegToRad((float)deg);
-	private double RadToDeg(float rad) {
-		return rad * 180 / Math.PI;
-	}
-	private float DegToRad(float deg) {
-		return (float)(deg * Math.PI / 180);
-	}
 }

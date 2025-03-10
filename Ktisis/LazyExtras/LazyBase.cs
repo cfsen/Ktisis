@@ -38,14 +38,12 @@ namespace Ktisis.LazyExtras;
  * 
  * Responsibilities:
  * - Initializing and providing access to various lazy components
- * - Initializing widgets for LazyImgui
  * 
  * If at any point in the future this were to be integrated properly,
  * it should be a reasonably straightforward task.
  * 
  * */
 public class LazyBase :IDisposable {
-	//public LazyUiSizes Sizes;
 	public IFramework fw;
 	public FileDialogManager fdm;
 	private ISelectManager sel;
@@ -53,21 +51,26 @@ public class LazyBase :IDisposable {
 	public LazyPoseComponents pose;
 	public LazyCameraComponents camera;
 	public LazyLightsComponents lights;
-	public ActorEntity? SelectedActor;
-
+	public LazyOverlayComponents overlay;
+	public LazyMaths math;
 	public LazyIO io;
 
+	public ActorEntity? SelectedActor;
 
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw, IDalamudPluginInterface dpi) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.fw = fw;
-		this.pose = new(ctx);
-		this.camera = new(ctx);
-		this.lights = new(ctx);
 		this.fdm = new();
-		this.io = new(dpi);
 		this.sel = sel;
 		this.sel.Changed += ActorSelectionChanged;
+
+		this.math = new();
+		this.io = new(dpi);
+		this.camera = new(ctx);
+		this.lights = new(ctx);
+		this.overlay = new(ctx);
+		this.pose = new(ctx, this.math);
+
 	}
 
 	private void ActorSelectionChanged(ISelectManager sender) {
@@ -90,23 +93,38 @@ public class LazyBase :IDisposable {
 			this.SelectedActor = ResolveActorEntity(first);
 			return;
 		}
-		else if(count > 1 && selected.Where(x => x is ActorEntity).Count() == count) {
+		else if(count > 1 && selected.Count(x => x is ActorEntity) == count) {
 			this.SelectedActor = ResolveActorEntity(first);
 			return;
 		}
-		else if(count > 1 && selected.Where(x => x is LightEntity).Count() == count) {
+		else if(count > 1 && selected.Count(x => x is LightEntity) == count) {
 			// don't swap selected actor if new selection is only lights
 			return;
 		}
 
 		// if there's an actorentity in here, we'll find it
-		var needle = selected.Where(x => x is not LightEntity).FirstOrDefault();
+		var needle = selected.FirstOrDefault(x => x is not LightEntity);
 		if(needle != null)
 			this.SelectedActor = ResolveActorEntity(needle);
 	}
 
 	// Target resolving
-		// TODO this is used in several subclasses, who whould all point here via ctx.
+
+	/// <summary>
+	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
+	/// </summary>
+	/// <returns>Selected ActorEntity on success, null on failure.</returns>
+	public ActorEntity? ResolveActorEntity() {
+		// Resolves the parent actor entity of any bone. Recursion warning.
+		var selected = this.sel.GetSelected().FirstOrDefault();
+		if (selected == null)
+			return null;
+
+		ActorEntity? actor = this.Backtrack(selected, 0, 10);
+		if (actor != null)
+			return actor;
+		return null;
+	}
 
 	/// <summary>
 	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
