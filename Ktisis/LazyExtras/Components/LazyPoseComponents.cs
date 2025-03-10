@@ -57,7 +57,8 @@ public class LazyPoseComponents {
 	/// Resets an actors gaze to a neutral position, determined by the orientation of the head.
 	/// </summary>
 	public void ResetGaze() {
-		if(this.ResolveActorEntity() is not ActorEntity ae) return;
+		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
+		//if(this.ResolveActorEntity() is not ActorEntity ae) return;
 		if(this.GetEyesNeutral(ae) is not List<Transform> eyes) return;
 		
 		this.SetEyesTransform(ae, eyes[0], eyes[1]);
@@ -68,7 +69,8 @@ public class LazyPoseComponents {
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
 	public void SetGazeAtWorldTarget(){
-		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
+		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
+		//if(this.ResolveActorEntity() is not ActorEntity ae) return;	
 		
 		// Use set position from SetWorldGazeTarget as target
 		this.SetGaze(ae, this.TargetLookPosition);
@@ -79,7 +81,8 @@ public class LazyPoseComponents {
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
 	public void SetGazeAtCurrentCamera(){
-		if(this.ResolveActorEntity() is not ActorEntity ae) return;	
+		if(this._ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
+		//if(this.ResolveActorEntity() is not ActorEntity ae) return;	
 
 		// Grab postion from current camera
 		if(this._ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
