@@ -97,11 +97,6 @@ public class WorkspaceWindow : KtisisWindow {
 
 		ImGui.SameLine(0, spacing);
 
-		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Anchor, "Lazy pose"))
-			this.Interface.ToggleLazyPose();
-
-		ImGui.SameLine(0, spacing);
-
 		if (Buttons.IconButtonTooltip(FontAwesomeIcon.Camera, "Lazy camera"))
 			this.Interface.ToggleLazyCamera();
 

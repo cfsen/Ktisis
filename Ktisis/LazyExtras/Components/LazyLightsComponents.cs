@@ -263,9 +263,8 @@ public class LazyLightsComponents {
 		var lspawn = this._ctx.Scene.Factory.CreateLight((LightType)kl.Type);
 		lspawn.SetName("_tmp");
 		await lspawn.Spawn();
-		var l = this._ctx.Scene.Children.OfType<LightEntity>().Where(s => s.Name == "_tmp").FirstOrDefault();
-		if (l != null)
-		{
+		var l = this._ctx.Scene.Children.OfType<LightEntity>().FirstOrDefault(s => s.Name == "_tmp");
+		if (l != null) {
 			l.Name = kl.Name;
 			this.SetupImportedLight(l, kl);
 		}

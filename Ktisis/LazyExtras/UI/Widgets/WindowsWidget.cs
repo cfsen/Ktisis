@@ -46,9 +46,6 @@ class WindowsWidget :ILazyWidget {
 		if (lui.BtnIcon(FontAwesomeIcon.SyncAlt, "OpenTransformEditor", uis.BtnSmall, "Transform editor"))
 			ctx.Interface.ToggleTransformWindow();
 		ImGui.SameLine();
-		if (lui.BtnIcon(FontAwesomeIcon.Anchor, "OpenLazyPose", uis.BtnSmall, "Lazy pose"))
-			ctx.Interface.ToggleLazyPose();
-		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.CameraRetro, "OpenLazyCamera", uis.BtnSmall, "Lazy camera"))
 			ctx.Interface.ToggleLazyCamera();
 		ImGui.SameLine();
