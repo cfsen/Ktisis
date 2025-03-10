@@ -1,4 +1,6 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
+
 using ImGuiNET;
 
 using Ktisis.Editor.Context.Types;
@@ -34,37 +36,40 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		}
 		public void Draw() {
 			ImGui.BeginGroup();
-			lui.DrawHeader(FontAwesomeIcon.PersonRays, "Pose utilities");
+			lui.DrawHeader(FontAwesomeIcon.PersonRays, $"Pose utilities: {ctx.LazyExtras.SelectedActor?.Name ?? "No target."}");
 			
-			ImGui.Text("Gaze control");
-			if (ImGui.Button("Set neutral"))
-				ctx.LazyExtras.pose.ResetGaze();
-			ImGui.SameLine();
-			if (ImGui.Button("Camera"))
-				ctx.LazyExtras.pose.SetGazeAtCurrentCamera();
-			ImGui.SameLine();
-			if (ImGui.Button("Set target"))
-				ctx.LazyExtras.pose.SetWorldGazeTarget();
-			ImGui.SameLine();
-			if (ImGui.Button("Look at"))
-				ctx.LazyExtras.pose.SetGazeAtWorldTarget();
-			ImGui.SameLine();
-			ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
+			using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null)) {
 
-			ImGui.Text("Bone overlay");
-			if (ImGui.Button("Gesture bones"))
-				ctx.LazyExtras.pose.ToggleGestureBones();
-			ImGui.SameLine();
-			if (ImGui.Button("Details"))
-				ctx.LazyExtras.pose.ToggleGestureDetailBones();
-			ImGui.SameLine();
-			if (ImGui.Button("Hide all"))
-				ctx.LazyExtras.pose.HideAllBones();
-			ImGui.Spacing();
-			ImGui.Text("Misc");
-			if (ImGui.Button("Set expression export pose"))
-				ctx.LazyExtras.pose.SetPartialReference();
+				ImGui.Text("Gaze control");
+				if (ImGui.Button("Set neutral"))
+					ctx.LazyExtras.pose.ResetGaze();
+				ImGui.SameLine();
+				if (ImGui.Button("Camera"))
+					ctx.LazyExtras.pose.SetGazeAtCurrentCamera();
+				ImGui.SameLine();
+				if (ImGui.Button("Set target"))
+					ctx.LazyExtras.pose.SetWorldGazeTarget();
+				ImGui.SameLine();
+				if (ImGui.Button("Look at"))
+					ctx.LazyExtras.pose.SetGazeAtWorldTarget();
+				ImGui.SameLine();
+				ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
 
+				ImGui.Text("Bone overlay");
+				if (ImGui.Button("Gesture bones"))
+					ctx.LazyExtras.pose.ToggleGestureBones();
+				ImGui.SameLine();
+				if (ImGui.Button("Details"))
+					ctx.LazyExtras.pose.ToggleGestureDetailBones();
+				ImGui.SameLine();
+				if (ImGui.Button("Hide all"))
+					ctx.LazyExtras.pose.HideAllBones();
+				ImGui.Spacing();
+				ImGui.Text("Misc");
+				if (ImGui.Button("Set expression export pose"))
+					ctx.LazyExtras.pose.SetPartialReference();
+
+			}
 
 			lui.DrawFooter();
 			ImGui.EndGroup();
