@@ -98,65 +98,73 @@ class PoseLoadWidget :ILazyWidget {
 
 	}
 	private void DrawImportToggles() {
-		if(ctx.LazyExtras.SelectedActor is not ActorEntity ae) { 
-			ImGui.Text("No actor selected.");
-			return;
-		}
+		int scc = 0;
+		if(ctx.LazyExtras.SelectedActor is ActorEntity ae)  
+			scc = ae.Recurse().Where(child => child is SkeletonNode && child.IsSelected).Count();
 
-		var scc = ae.Recurse().Where(child => child is SkeletonNode && child.IsSelected).Count();
-		PoseTransforms xfmflags = ctx.Config.File.ImportPoseTransforms;
-		PoseMode mflags = ctx.Config.File.ImportPoseModes;
+		using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor is null)){
 
-		bool rot = xfmflags.HasFlag(PoseTransforms.Rotation);
-		bool pos = xfmflags.HasFlag(PoseTransforms.Position);
-		bool sca = xfmflags.HasFlag(PoseTransforms.Scale);
+			PoseTransforms xfmflags = ctx.Config.File.ImportPoseTransforms;
+			PoseMode mflags = ctx.Config.File.ImportPoseModes;
 
-		bool mbody = mflags.HasFlag(PoseMode.Body);
-		bool mface = mflags.HasFlag(PoseMode.Face);
+			bool rot = xfmflags.HasFlag(PoseTransforms.Rotation);
+			bool pos = xfmflags.HasFlag(PoseTransforms.Position);
+			bool sca = xfmflags.HasFlag(PoseTransforms.Scale);
 
-		if(ImGui.Checkbox("Rotation##WPoseLoadRotation",	ref rot)) xfmflags ^= PoseTransforms.Rotation;
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(uis.SidebarW/3);
-		if(ImGui.Checkbox("Position##WPoseLoadPosition",	ref pos)) xfmflags ^= PoseTransforms.Position;
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(2*uis.SidebarW/3);
-		if(ImGui.Checkbox("Scale##WPoseLoadScale",			ref sca)) xfmflags ^= PoseTransforms.Scale;
+			bool mbody = mflags.HasFlag(PoseMode.Body);
+			bool mface = mflags.HasFlag(PoseMode.Face);
 
-		using(ImRaii.Disabled(scc > 0)) {
-			if(ImGui.Checkbox("Body##WPoseLoadBody",		ref mbody)) mflags ^= PoseMode.Body;
+			if(ImGui.Checkbox("Rotation##WPoseLoadRotation",	ref rot)) xfmflags ^= PoseTransforms.Rotation;
 			ImGui.SameLine();
 			ImGui.SetCursorPosX(uis.SidebarW/3);
-			if(ImGui.Checkbox("Face##WPoseLoadFace",		ref mface)) mflags ^= PoseMode.Face;
-		}
-
-		using(ImRaii.Disabled(scc == 0 || !pos)) {
-			ImGui.Checkbox("Anchor group##WPAnchorGrp",		ref ctx.Config.File.AnchorPoseSelectedBones);
+			if(ImGui.Checkbox("Position##WPoseLoadPosition",	ref pos)) xfmflags ^= PoseTransforms.Position;
 			ImGui.SameLine();
-			ImGui.SetCursorPosX(uis.SidebarW/3);
-			ImGui.Checkbox("Restore rotation##WPARestRot",	ref ctx.Config.File.AnchorPoseSelectedBonesRotate);
-		}
+			ImGui.SetCursorPosX(2*uis.SidebarW/3);
+			if(ImGui.Checkbox("Scale##WPoseLoadScale",			ref sca)) xfmflags ^= PoseTransforms.Scale;
 
-		ctx.Config.File.ImportPoseModes			= mflags;
-		ctx.Config.File.ImportPoseTransforms	= xfmflags;
-		selectedBones = scc;
-		// For testing
+			using(ImRaii.Disabled(scc > 0)) {
+				if(ImGui.Checkbox("Body##WPoseLoadBody",		ref mbody)) mflags ^= PoseMode.Body;
+				ImGui.SameLine();
+				ImGui.SetCursorPosX(uis.SidebarW/3);
+				if(ImGui.Checkbox("Face##WPoseLoadFace",		ref mface)) mflags ^= PoseMode.Face;
+			}
+
+			using(ImRaii.Disabled(scc == 0 || !pos)) {
+				ImGui.Checkbox("Anchor group##WPAnchorGrp",		ref ctx.Config.File.AnchorPoseSelectedBones);
+				ImGui.SameLine();
+				ImGui.SetCursorPosX(uis.SidebarW/3);
+				ImGui.Checkbox("Restore rotation##WPARestRot",	ref ctx.Config.File.AnchorPoseSelectedBonesRotate);
+			}
+
+			ctx.Config.File.ImportPoseModes			= mflags;
+			ctx.Config.File.ImportPoseTransforms	= xfmflags;
+			selectedBones = scc;
+			// For testing
+		}
 	}
 	private void DrawApplyBtn() {
-		if(ctx.LazyExtras.SelectedActor != null && ctx.LazyExtras.SelectedActor.Pose != null && loadedPose != null) {
+		using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null || ctx.LazyExtras.SelectedActor.Pose == null || loadedPose == null)) {
 			ImGui.SetCursorPosX(uis.SidebarW/3);
-			if(lui.Btn("Apply", "WPLApplyPoseBtn", new(200, uis.BtnSmall.Y), "Apply the selected pose")) {
-				ctx.Posing.ApplyPoseFile(
-					ctx.LazyExtras.SelectedActor.Pose,
-					loadedPose,
-					ctx.Config.File.ImportPoseModes,
-					ctx.Config.File.ImportPoseTransforms,
-					selectedBones > 0 ? true : false,
-					ctx.Config.File.AnchorPoseSelectedBones,
-					ctx.Config.File.AnchorPoseSelectedBonesRotate
-					);
-			}
+			if(lui.Btn("Apply", "WPLApplyPoseBtn", new(200, uis.BtnSmall.Y), "Apply the selected pose"))
+				OnClickApplyBtn();
 		}
 	}
+
+	private void OnClickApplyBtn() {
+		if(ctx.LazyExtras.SelectedActor?.Pose == null) return;
+		if(loadedPose == null) return;
+
+		ctx.Posing.ApplyPoseFile(
+			ctx.LazyExtras.SelectedActor.Pose,
+			loadedPose,
+			ctx.Config.File.ImportPoseModes,
+			ctx.Config.File.ImportPoseTransforms,
+			selectedBones > 0 ? true : false,
+			ctx.Config.File.AnchorPoseSelectedBones,
+			ctx.Config.File.AnchorPoseSelectedBonesRotate
+			);
+	}
+
 	private void DrawAdvancedLoading() {
 		// new features here
 	}
