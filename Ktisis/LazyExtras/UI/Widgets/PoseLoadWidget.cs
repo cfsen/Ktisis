@@ -8,6 +8,7 @@ using Ktisis.Data.Json;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Posing.Data;
 using Ktisis.LazyExtras.Interfaces;
+using Ktisis.LazyExtras.UI.Controls;
 using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.Skeleton;
 
@@ -26,6 +27,7 @@ class PoseLoadWidget :ILazyWidget {
 	private IEditorContext ctx;
 	private LazyUi lui;
 	private LazyUiSizes uis;
+	private FileNavigator fn;
 
 	private bool dialogOpen = false;
 	private PoseFile? loadedPose = null;
@@ -44,6 +46,7 @@ class PoseLoadWidget :ILazyWidget {
 		this.ctx = ctx;
 		this.lui = new();
 		this.uis = lui.uis;
+		this.fn = new(ctx.LazyExtras.io, lui, uis, ".pose");
 	}
 	public void UpdateScaling() {
 		this.uis.RefreshScale();
@@ -51,11 +54,15 @@ class PoseLoadWidget :ILazyWidget {
 	public void Draw() {
 		if(dialogOpen)
 			ctx.LazyExtras.io.DrawDialog();
+		if(fn.StateChanged)
+			HandleFileNavState();
+
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.SquarePersonConfined, 
 			$"Pose loading: {ctx.LazyExtras.SelectedActor?.Name ?? "No target"}");
 		
 		DrawFilePicker();
+		fn.Draw();
 		DrawImportToggles();
 		ImGui.Dummy(new(0, uis.Space));
 		DrawApplyBtn();
@@ -70,15 +77,16 @@ class PoseLoadWidget :ILazyWidget {
 			dialogOpen = true;
 			ctx.LazyExtras.io.OpenPoseDialog((valid, res) => {
 				if (valid) {
-					dbg(res?.FirstOrDefault()?.ToString() ?? "no res :(");
 					JsonFileSerializer jfs = new();
-					if(jfs.Deserialize<PoseFile>(ctx.LazyExtras.io.LoadFileData()) is PoseFile pf) {
+					if (jfs.Deserialize<PoseFile>(ctx.LazyExtras.io.LoadFileData()) is PoseFile pf)
+					{
 						loadedPose = pf;
 						loadedPoseName = ctx.LazyExtras.io.LoadedFileName();
 						loadedPoseDir = ctx.LazyExtras.io.LastLoadDirectory();
 						loadedPoseDirFriendly = ctx.LazyExtras.io.LastLoadDirectory(true);
+						fn.UpdateState(loadedPoseDir, loadedPoseName);
 					}
-				} 
+				}
 				dialogOpen = false;
 				});
 		}
@@ -90,12 +98,6 @@ class PoseLoadWidget :ILazyWidget {
 			ImGui.Text(loadedPoseDirFriendly);
 			ImGui.EndGroup();
 		}
-			// 2nd milestone: move to advanced loading probably
-			// list other files in directory?
-			// list recent files?
-			// next/previous file button?
-
-
 	}
 	private void DrawImportToggles() {
 		int scc = 0;
@@ -149,7 +151,21 @@ class PoseLoadWidget :ILazyWidget {
 				OnClickApplyBtn();
 		}
 	}
+	private void HandleFileNavState() {
+		fn.StateChanged = false;
+		if(fn.FilePath == null) return;
 
+		var jsondata = ctx.LazyExtras.io.ReadFile(fn.FilePath) ?? null;
+		if(jsondata == null) return;
+
+		JsonFileSerializer jfs = new();
+		if (jfs.Deserialize<PoseFile>(jsondata) is PoseFile pf) {
+			loadedPose = pf;
+			loadedPoseName = fn.FileNameFriendly;
+		}
+
+		OnClickApplyBtn();
+	}
 	private void OnClickApplyBtn() {
 		if(ctx.LazyExtras.SelectedActor?.Pose == null) return;
 		if(loadedPose == null) return;
