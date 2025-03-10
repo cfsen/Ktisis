@@ -1,19 +1,23 @@
-﻿using Dalamud.Interface.ImGuiFileDialog;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.ImGuiFileDialog;
+using Dalamud.Plugin;
+
+using FFXIVClientStructs.FFXIV.Component.GUI;
+
+using ImGuiNET;
+
+using Ktisis.Common.Extensions;
+
+using Lumina.Excel.Sheets;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using Lumina.Excel.Sheets;
-using Dalamud.Plugin;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using ImGuiNET;
-using Ktisis.Common.Extensions;
-using Dalamud.Interface;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 
 namespace Ktisis.LazyExtras;

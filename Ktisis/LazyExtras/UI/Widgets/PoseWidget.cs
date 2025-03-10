@@ -38,36 +38,40 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			ImGui.BeginGroup();
 			lui.DrawHeader(FontAwesomeIcon.PersonRays, $"Pose utilities: {ctx.LazyExtras.SelectedActor?.Name ?? "No target."}");
 			
+			// TODO selectmanager is not notified if the current selection is deleted.
 			using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null)) {
 
 				ImGui.Text("Gaze control");
-				if (ImGui.Button("Set neutral"))
-					ctx.LazyExtras.pose.ResetGaze();
+				if (ImGui.Button("Set neutral") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.pose.ResetGaze(ctx.LazyExtras.SelectedActor);
 				ImGui.SameLine();
-				if (ImGui.Button("Camera"))
-					ctx.LazyExtras.pose.SetGazeAtCurrentCamera();
+				if (ImGui.Button("Camera") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.pose.SetGazeAtCurrentCamera(ctx.LazyExtras.SelectedActor);
 				ImGui.SameLine();
-				if (ImGui.Button("Set target"))
+				if (ImGui.Button("Set target") && ctx.LazyExtras.SelectedActor != null)
 					ctx.LazyExtras.pose.SetWorldGazeTarget();
 				ImGui.SameLine();
-				if (ImGui.Button("Look at"))
-					ctx.LazyExtras.pose.SetGazeAtWorldTarget();
+				if (ImGui.Button("Look at") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.pose.SetGazeAtWorldTarget(ctx.LazyExtras.SelectedActor);
 				ImGui.SameLine();
 				ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
 
 				ImGui.Text("Bone overlay");
-				if (ImGui.Button("Gesture bones"))
-					ctx.LazyExtras.pose.ToggleGestureBones();
+				if (ImGui.Button("Gesture bones") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.overlay.ToggleGestureBones(ctx.LazyExtras.SelectedActor);
+
 				ImGui.SameLine();
-				if (ImGui.Button("Details"))
-					ctx.LazyExtras.pose.ToggleGestureDetailBones();
+				if (ImGui.Button("Details") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.overlay.ToggleGestureDetailBones(ctx.LazyExtras.SelectedActor!);
 				ImGui.SameLine();
-				if (ImGui.Button("Hide all"))
-					ctx.LazyExtras.pose.HideAllBones();
+				if (ImGui.Button("Hide all") && ctx.LazyExtras.SelectedActor != null)
+					ctx.LazyExtras.overlay.HideAllBones();
 				ImGui.Spacing();
 				ImGui.Text("Misc");
-				if (ImGui.Button("Set expression export pose"))
+				if (ImGui.Button("Set expression export pose") && ctx.LazyExtras.SelectedActor != null)
 					ctx.LazyExtras.pose.SetPartialReference();
+				if (ImGui.Button("dbg hash lookup"))
+					ctx.LazyExtras.pose.dbgTestGAT(ctx.LazyExtras.SelectedActor!);
 
 			}
 
