@@ -42,6 +42,7 @@ public class LazyIO :IDisposable {
 	public void DrawDialog() => _fdm.Draw();
 	public string LoadFileData() => _readFileData;
 	public string LastLoadDirectory(bool friendly = false) => friendly ? Path.GetFileName(_lastLoadDirectory) : _lastLoadDirectory;
+	public string GetFriendlyName(string path) => Path.GetFileName(path) ?? "Error: invalid path.";
 	public string LoadedFileName() => _readFileName;
 	public string SetSaveBuffer(string s) => _saveBuffer = s;
 
@@ -108,10 +109,12 @@ public class LazyIO :IDisposable {
 				.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
 				.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
 			_lastLoadDirectory = loc;
-			dbg($"Load data from: {items}");
 			_readFileName = Path.GetFileName(items);
-			dbg($"Update name of last read file: {_readFileName}");
 			_readFileData = ReadFile(items) ?? "";
+
+			dbg($"Loading from dir: {loc}");
+			dbg($"Load data from: {items}");
+			dbg($"Update name of last read file: {_readFileName}");
 		}
 		else if(dtype.HasFlag(LazyIOFlag.Save)) {
 			dbg($"Save to file: {items}");
@@ -182,13 +185,13 @@ public class LazyIO :IDisposable {
 
 	// Directory scan
 
-	private void ScanDir(string path, string filter) {
-		Directory.GetFiles(path);
+	public string[] ScanDir(string path, string filter) {
+		return Directory.GetFiles(path, "*" + filter);
 	}
 
 	// File
 
-	private string? ReadFile(string path) {
+	public string? ReadFile(string path) {
 		try {
 			var d = File.ReadAllText(path);
 			return d;
