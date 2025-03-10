@@ -62,7 +62,7 @@ public class LazyImgui : KtisisWindow {
 		this.Initialize();
 		this.SetShowUi();
 		
-		this.widgetFilter = LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera;
+		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera;
 	}
 
 	// Initialize widgets
@@ -105,7 +105,7 @@ public class LazyImgui : KtisisWindow {
 			case false:
 				this.DrawWorkspace();
 				this.DrawWidgetSelector();
-				ImGui.BeginChild("ScrollingRegion", new(uis.SidebarW-2*uis.Space, uis.ScreenDimensions.Y-uis.BtnBig.Y-2*uis.BtnSmall.Y-5*uis.Space), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+				ImGui.BeginChild("ScrollingRegion", new(uis.SidebarW-2*uis.Space, uis.ScreenDimensions.Y-uis.BtnBig.Y-1*uis.BtnSmall.Y-5*uis.Space), false, ImGuiWindowFlags.AlwaysVerticalScrollbar);
 				this.DrawWidgets();
 				ImGui.EndChild();
 				break;
@@ -232,7 +232,7 @@ public class LazyImgui : KtisisWindow {
 		if (lui.BtnIconState(FontAwesomeIcon.EllipsisH, "WMMisc", uis.BtnSmall, "Misc widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Misc), 0xFF545253, 0xFF003300))
 			widgetFilter = widgetFilter ^ LazyWidgetCat.Misc;
-		lui.DrawHeader(FontAwesomeIcon.Crosshairs, (ctx.LazyExtras.SelectedActor?.Name ?? "No target"));
+		//lui.DrawHeader(FontAwesomeIcon.Crosshairs, (ctx.LazyExtras.SelectedActor?.Name ?? "No target"));
 	}
 
 	// Utilities
