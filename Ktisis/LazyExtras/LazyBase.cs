@@ -16,6 +16,7 @@ using Ktisis.LazyExtras.Interfaces;
 using Ktisis.LazyExtras.UI.Widgets;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
+using Ktisis.Scene.Entities.World;
 using Ktisis.Services.Plugin;
 using Ktisis.Structs.Camera;
 
@@ -70,38 +71,42 @@ public class LazyBase :IDisposable {
 	}
 
 	private void ActorSelectionChanged(ISelectManager sender) {
-		dbg("Selection event");
-		dbg($"Sent: {sender.GetSelected().FirstOrDefault()}");
-
+		// TODO testing and cleanup
 		var selected = sender.GetSelected();
 
-		// TODO rushed implementation to get something that works, do something more elegant
-		if(!selected.Any()) {
-			dbg("0 selected");
+		if(!selected.Any()) return;
+		var count = selected.Count();
+		var first = selected.First();
+
+		if(count == 1 && first is ActorEntity entity) {
+			this.SelectedActor = entity;
 			return;
 		}
-		else if(selected.Count() == 1) {
-			dbg("1 selected");
-			if(selected is ActorEntity ae){
-				dbg("1 AE");
-				this.SelectedActor = ae;
-			}
-			else {
-				dbg("1 SE recurse");
-				var res = ResolveActorEntity(selected.First());
-				if(res is ActorEntity rec)
-					this.SelectedActor = rec;
-			}
+		else if(count == 1 && first is LightEntity) {
+			// don't swap selected actor when selecting a light
+			return;
 		}
-		else {
-			dbg("n>1 selected");
-			var first = selected.First();
-			if(first is ActorEntity ae)
-				this.SelectedActor = ae;
+		else if(count == 1 && first is not ActorEntity){
+			this.SelectedActor = ResolveActorEntity(first);
+			return;
 		}
+		else if(count > 1 && selected.Where(x => x is ActorEntity).Count() == count) {
+			this.SelectedActor = ResolveActorEntity(first);
+			return;
+		}
+		else if(count > 1 && selected.Where(x => x is LightEntity).Count() == count) {
+			// don't swap selected actor if new selection is only lights
+			return;
+		}
+
+		// if there's an actorentity in here, we'll find it
+		var needle = selected.Where(x => x is not LightEntity).FirstOrDefault();
+		if(needle != null)
+			this.SelectedActor = ResolveActorEntity(needle);
 	}
 
 	// Target resolving
+		// TODO this is used in several subclasses, who whould all point here via ctx.
 
 	/// <summary>
 	/// Backtracks current selection in order to find the parent ActorEntity. Max depth 10. 
