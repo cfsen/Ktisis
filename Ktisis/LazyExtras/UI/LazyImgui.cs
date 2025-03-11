@@ -62,13 +62,14 @@ public class LazyImgui : KtisisWindow {
 		this.Initialize();
 		this.SetShowUi();
 		
-		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera;
+		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera ^ LazyWidgetCat.Misc;
 	}
 
 	// Initialize widgets
 
 	private void Initialize() {
 		this.Widgets = [
+			new ActorOffsetWidget(ctx),
 			new PoseFaceWidget(ctx, tex),
 			new PoseWidget(ctx),
 			new LightsWidget(ctx),
