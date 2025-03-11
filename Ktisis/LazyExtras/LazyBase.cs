@@ -54,6 +54,7 @@ public class LazyBase :IDisposable {
 	public LazyOverlayComponents overlay;
 	public LazyMaths math;
 	public LazyIO io;
+	public LazyActorOffsetsComponents actors;
 
 	public ActorEntity? SelectedActor;
 
@@ -70,7 +71,7 @@ public class LazyBase :IDisposable {
 		this.lights = new(ctx);
 		this.overlay = new(ctx);
 		this.pose = new(ctx, this.math);
-
+		this.actors = new(ctx);
 	}
 
 	private void ActorSelectionChanged(ISelectManager sender) {

@@ -63,6 +63,12 @@ public class LazyIO :IDisposable {
 		_fdm.OpenFileDialog("Load pose file", ".pose", 
 			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), 1, _cfg.LastLoadPoseDir);
 	}
+	public void OpenOffsetDialog(Action<bool, List<string>> callback) {
+		_dialogOpen = true;
+		dbg(_cfg.LastLoadPoseDir);
+		_fdm.OpenFileDialog("Load pose file", ".koffsets", 
+			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Load), 1, _cfg.LastLoadPoseDir);
+	}
 	public void OpenPoseDirDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.OpenFolderDialog("Open pose directory", 
@@ -78,7 +84,12 @@ public class LazyIO :IDisposable {
 	}
 	public void OpenPoseSaveDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
-		_fdm.SaveFileDialog("Save lights", ".klights", "Lights", ".klights", 
+		_fdm.SaveFileDialog("Save pose", ".pose", "Pose", ".pose", 
+			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastLoadPoseDir);
+	}
+	public void OpenOffsetSaveDialog(Action<bool, string> callback) {
+		_dialogOpen = true;
+		_fdm.SaveFileDialog("Save offsets", ".koffsets", "Offsets", ".koffsets", 
 			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastLoadPoseDir);
 	}
 
@@ -245,6 +256,7 @@ public enum LazyIOFlag {
 	Lights = 4,
 	Poses = 8,
 	Expression = 16,
+	Offset = 32
 }
 
 [Serializable]
