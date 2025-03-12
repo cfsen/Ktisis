@@ -39,6 +39,7 @@ namespace Ktisis.LazyExtras.UI.Widgets
 		
 		private ITransformMemento? xfmState;
 		private bool xfmEnded;
+		private ITransformTarget? xft;
 
 		public TransformWidget(IEditorContext ctx) {
 			this.Category = LazyWidgetCat.Transformers;
@@ -58,29 +59,27 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			
 			this.xfmState = null;
 			this.xfmEnded = false;
+			this.xft = null;
 		}
 		public void UpdateScaling() {
 			this.uis.RefreshScale();
 		}
+
+		// Draw
+
 		public void Draw() {
-			BufferRegenerate();
+			// TODO still need to regenerate on undo/redo
+			if(ctx.Transform.Target != null && (xft == null || xft != ctx.Transform.Target))
+				BufferRegenerate();
+
+
 			ImGui.BeginGroup();
 			// TODO Target display should be its own function, and also communicate that multiple bones are selected.
 			lui.DrawHeader(FontAwesomeIcon.ArrowsUpDownLeftRight, $"Posing: {ctx.Transform.Target?.Primary?.Name ?? "No target"}");
-			//if (ImGui.BeginChild("LazyTransformWidgetContainer", new(uis.SidebarW, 200))) {
 
-				using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
-					if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
-						TableUpdate(SliderFormatFlag.Position);
-					if (lui.SliderTableRow("LazyRotationSlider", ref bufferRot, SliderFormatFlag.Rotation, ref xfmEnded))
-						TableUpdate(SliderFormatFlag.Rotation);
-					if (lui.SliderTableRow("LazyScaleSlider", ref bufferScale, SliderFormatFlag.Scale, ref xfmEnded))
-						TableUpdate(SliderFormatFlag.Scale);
-				}
+			DrawSliders();
+			DrawTransformControls();
 
-				DrawTransformControls();
-			//	ImGui.EndChild();
-			//}
 			lui.DrawFooter();
 			ImGui.EndGroup();
 
@@ -90,56 +89,16 @@ namespace Ktisis.LazyExtras.UI.Widgets
 				xfmState = null;
 			} 
 		}
-		private void TableUpdate(SliderFormatFlag type) {
-			if(ctx.Transform.Target is not ITransformTarget xfm) return;
-
-			Transform xfmb = ctx.Transform.Target?.GetTransform() ?? new Transform();
-			xfmState ??= ctx.Transform.Begin(xfm);
-
-			switch (type) {
-				case SliderFormatFlag.Position:
-					xfmb.Position = bufferPos;
-					break;
-				case SliderFormatFlag.Rotation:
-					HandleRotation(ref bufferRot, ref bufferRotLast, ref xfmb.Rotation);
-					break;
-				case SliderFormatFlag.Scale:
-					xfmb.Scale = bufferScale;
-					break;
-				default: break;
+		private void DrawSliders() {
+			using (ImRaii.Disabled(ctx.Transform.Target == null || !ctx.Posing.IsEnabled)) {
+				if (lui.SliderTableRow("LazyPositionSlider", ref bufferPos, SliderFormatFlag.Position, ref xfmEnded))
+					TableUpdate(SliderFormatFlag.Position);
+				if (lui.SliderTableRow("LazyRotationSlider", ref bufferRot, SliderFormatFlag.Rotation, ref xfmEnded))
+					TableUpdate(SliderFormatFlag.Rotation);
+				if (lui.SliderTableRow("LazyScaleSlider", ref bufferScale, SliderFormatFlag.Scale, ref xfmEnded))
+					TableUpdate(SliderFormatFlag.Scale);
 			}
-			xfmState?.SetTransform(xfmb);
 		}
-		private void BufferRegenerate() {
-			if(ctx.Transform.Target is not ITransformTarget xfm) return;
-			var xfmb = xfm.GetTransform() ?? new Transform();
-			bufferPos = xfmb.Position;
-			bufferScale = xfmb.Scale;
-		}
-
-		private void HandleRotation(ref Vector3 state, ref Vector3 last, ref Quaternion rot) {
-			if(state.X != last.X)
-				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitX, (last.X-state.X)*MathF.PI/180.0f);
-			if(state.Y != last.Y)
-				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, (last.Y-state.Y)*MathF.PI/180.0f);
-			if(state.Z != last.Z)
-				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (last.Z-state.Z)*MathF.PI/180.0f);
-
-			for(int i = 0; i < 3; i++) {
-				switch(bufferRot[i]) {
-					case > 360.0f:
-						bufferRot[i] -= 360;
-						break;
-					case < 0:
-						bufferRot[i] += 360;
-						break;
-					default: break;
-				}
-			}
-
-			bufferRotLast = bufferRot;
-		}
-
 		private void DrawTransformControls() {
 			ImGui.BeginGroup();
 			ImGui.Checkbox("Parenting", ref ctx.Config.Gizmo.ParentBones);
@@ -148,8 +107,7 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			ImGui.SameLine();
 
 			ImGui.SetCursorPosX(uis.SidebarW-2*(uis.BtnSmall.X)-ImGui.GetItemRectSize().X);
-			//ImGui.Spacing();
-			//ImGui.SameLine();
+
 			// World/Local transform
 			if(lui.BtnIcon((ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? FontAwesomeIcon.Globe : FontAwesomeIcon.Home), 
 				"LazyWorldLocalToggle", uis.BtnSmall, (ctx.Config.Gizmo.Mode == ImGuizmo.Mode.World ? "Global" : "Local")))
@@ -165,6 +123,62 @@ namespace Ktisis.LazyExtras.UI.Widgets
 				"LazyMirrorRotationToggle", uis.BtnSmall, (ctx.Config.Gizmo.MirrorRotation ? "Symmetrical" : "Asymmetrical")))
 				ctx.Config.Gizmo.MirrorRotation ^= true;
 		}
-		private static void dp(string s) =>	Ktisis.Log.Debug(s); 
+
+		// Logic
+
+		// TODO sets initial state of rotation, not very pretty.
+		private void BufferRegenerate() {
+			xft = ctx.Transform.Target;
+			Transform xfmb = ctx.Transform.Target?.GetTransform() ?? new Transform();
+			bufferRot = HkaEulerAngles.ToEuler(xfmb.Rotation); // TODO vectorangles
+			bufferRotLast = bufferRot;
+			bufferPos = xfmb.Position;
+			bufferScale = xfmb.Scale;
+		}
+		private void TableUpdate(SliderFormatFlag type) {
+			if(ctx.Transform.Target is not ITransformTarget xfm || ctx.Transform.Target == null) return;
+
+			Transform xfmb = ctx.Transform.Target?.GetTransform() ?? new Transform();
+			xfmState ??= ctx.Transform.Begin(xfm);
+
+			switch (type) {
+				case SliderFormatFlag.Position:
+					xfmb.Position = bufferPos;
+					break;
+				case SliderFormatFlag.Rotation:
+					HandleRotation(ref bufferRot, ref bufferRotLast, ref xfmb.Rotation);
+					ClampRotationUIBuffer();
+					bufferRotLast = bufferRot;
+					break;
+				case SliderFormatFlag.Scale:
+					xfmb.Scale = bufferScale;
+					break;
+				default: break;
+			}
+			xfmState?.SetTransform(xfmb);
+		}
+		// TODO REFAC pure math functions should be moved to maths
+		private void HandleRotation(ref Vector3 state, ref Vector3 last, ref Quaternion rot) {
+			if(state.X != last.X)
+				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitX, (last.X-state.X)*MathF.PI/180.0f);
+			if(state.Y != last.Y)
+				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, (last.Y-state.Y)*MathF.PI/180.0f);
+			if(state.Z != last.Z)
+				rot *= Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (last.Z-state.Z)*MathF.PI/180.0f);
+		}
+		private void ClampRotationUIBuffer() {
+			for(int i = 0; i < 3; i++) {
+				switch(bufferRot[i]) {
+					case > 360.0f:
+						bufferRot[i] -= 360;
+						break;
+					case < 0:
+						bufferRot[i] += 360;
+						break;
+					default: break;
+				}
+			}
+		}
+		private static void dbg(string s) =>	Ktisis.Log.Debug($"TransformWidget: {s}"); 
     }
 }
