@@ -44,10 +44,10 @@ class FileNavigator {
 
 		if(lui.BtnIcon(Dalamud.Interface.FontAwesomeIcon.ArrowLeft, $"CtrlFileNav{Filter}ArrowLeft", uis.BtnSmall, "Previous"))
 			TraverseDirectory(-1);
+		//ImGui.SameLine();
+		//ImGui.Text(FileNameFriendly ?? "No pose loaded");
 		ImGui.SameLine();
-		ImGui.Text(FileNameFriendly ?? "No pose loaded");
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(uis.SidebarW-2*uis.BtnSmall.X-2*uis.Space);
+		//ImGui.SetCursorPosX(uis.SidebarW-2*uis.BtnSmall.X-2*uis.Space);
 		if(lui.BtnIcon(Dalamud.Interface.FontAwesomeIcon.ArrowRight, $"CtrlFileNav{Filter}ArrowRight", uis.BtnSmall, "Next"))
 			TraverseDirectory(1);
 
