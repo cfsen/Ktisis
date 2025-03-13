@@ -22,6 +22,10 @@ public class IpcManager {
 	public bool IsCustomizeActive => this.GetPluginInstalled("CustomizePlus");
 	public CustomizeIpcProvider GetCustomizeIpc() => new(this._dpi);
 
+	public bool IsGlamourerActive => this.GetPluginInstalled("Glamourer");
+	public GlamourerIpcProvider GetGlamourerIpc() => new(this._dpi);
+
+
 	private bool GetPluginInstalled(string internalName)
 		=> this._dpi.InstalledPlugins.Any(p => p.IsLoaded && p.InternalName == internalName);
 }
