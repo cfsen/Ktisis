@@ -70,8 +70,6 @@ namespace Ktisis.LazyExtras.UI.Widgets
 				ImGui.Text("Misc");
 				if (ImGui.Button("Set expression export pose") && ctx.LazyExtras.SelectedActor != null)
 					ctx.LazyExtras.pose.SetPartialReference();
-				if (ImGui.Button("dbg hash lookup"))
-					ctx.LazyExtras.pose.dbgTestGAT(ctx.LazyExtras.SelectedActor!);
 
 			}
 

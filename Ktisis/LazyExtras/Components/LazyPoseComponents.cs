@@ -17,6 +17,7 @@ using Ktisis.LazyExtras.Datastructures;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Diagnostics;
 using Ktisis.Editor.Transforms.Types;
+using Ktisis.Actions.Types;
 
 namespace Ktisis.LazyExtras.Components;
 /*
@@ -58,11 +59,20 @@ public class LazyPoseComponents {
 	/// Resets an actors gaze to a neutral position, determined by the orientation of the head.
 	/// </summary>
 	public void ResetGaze(ActorEntity ae) {
+		if(ae == null || ae.Pose == null) return;
+		// capture state
+		var epc = new EntityPoseConverter(ae.Pose);
+		var initial = epc.Save();
+		
+		// xfm
 		var children = ae.Recurse().ToList();
-		
 		if(this.GetEyesNeutral(children) is not List<Transform> eyes) return;
-		
+
 		this.SetEyesTransform(children, eyes[0], eyes[1]);
+
+		// push history
+		var final = epc.Save();
+		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
 	}
 
 	/// <summary>
@@ -70,9 +80,19 @@ public class LazyPoseComponents {
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
 	public void SetGazeAtWorldTarget(ActorEntity ae){
+		if(ae == null || ae.Pose == null) return;
+		// capture state
+		var epc = new EntityPoseConverter(ae.Pose);
+		var initial = epc.Save();
+
+		// xfm
 		var children = ae.Recurse().ToList();
 		// Use set position from SetWorldGazeTarget as target
 		this.SetGaze(children, this.TargetLookPosition);
+
+		// push history
+		var final = epc.Save();
+		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
 	}
 
 	/// <summary>
@@ -80,10 +100,35 @@ public class LazyPoseComponents {
 	/// Resolves the parent ActorEntity from any child node.
 	/// </summary>
 	public void SetGazeAtCurrentCamera(ActorEntity ae){
+		if(ae == null || ae.Pose == null) return;
+		// capture state
+		var epc = new EntityPoseConverter(ae.Pose);
+		var initial = epc.Save();
+
+		// xfm
 		// Grab postion from current camera
 		if(this.ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
 		var children = ae.Recurse().ToList();
 		this.SetGaze(children, target);
+
+		// push history
+		var final = epc.Save();
+		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
+	}
+
+	// Memento helpers
+
+	private void HistoryAdd(PoseMemento pm) {
+		this.ctx.Actions.History.Add(pm);
+	}
+	private PoseMemento MementoCreate(EntityPoseConverter epc, PoseContainer initial, PoseContainer final, PoseTransforms flags) {
+		return new PoseMemento(epc) {
+			Modes = PoseMode.All,
+			Transforms = flags,
+			Bones = null,
+			Initial = initial,
+			Final = final
+		};
 	}
 
 	// Gaze logic 
