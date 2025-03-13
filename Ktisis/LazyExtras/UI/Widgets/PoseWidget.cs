@@ -56,6 +56,13 @@ namespace Ktisis.LazyExtras.UI.Widgets
 				ImGui.SameLine();
 				ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
 
+				if(lui.BtnIcon(FontAwesomeIcon.Recycle, "WDG_Pose_ResetFocalPoint", uis.BtnSmaller, "Reset"))
+					ctx.LazyExtras.pose.GazeFocalPointScalar = 0.0f;
+				ImGui.SameLine();
+				using (ImRaii.ItemWidth(uis.SidebarW/3)) {
+				ImGui.DragFloat("Gaze focal depth", ref ctx.LazyExtras.pose.GazeFocalPointScalar, 0.001f, -0.5f, 0.5f);
+				}
+
 				ImGui.Text("Bone overlay");
 				if (ImGui.Button("Gesture bones") && ctx.LazyExtras.SelectedActor != null)
 					ctx.LazyExtras.overlay.ToggleGestureBones(ctx.LazyExtras.SelectedActor);
