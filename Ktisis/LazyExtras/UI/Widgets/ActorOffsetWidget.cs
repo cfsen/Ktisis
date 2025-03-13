@@ -140,6 +140,7 @@ class ActorOffsetWidget :ILazyWidget {
 			ctx.LazyExtras.io.OpenOffsetSaveDialog((valid, res) => {
 				if (valid) {
 					dbg("Success: saving offsets.");
+					dbg(res);
 				}
 				dialogOpen = false;
 				});
@@ -157,18 +158,22 @@ class ActorOffsetWidget :ILazyWidget {
 		}
 	}
 	private void DrawFileOpenPicker() {
-		// 1st milestone
-		// show button to open dialog
 		if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WAOFLoadActorOffsets", uis.BtnSmall, "Load offsets")) {
 			dialogOpen = true;
 			ctx.LazyExtras.io.OpenOffsetDialog((valid, res) => {
 				if (valid) {
 					dbg("Success: reading offsets.");
-					offsetsString = ctx.LazyExtras.io.LoadFileData();
-					offsets = ctx.LazyExtras.actors.GenerateOffsetObject(offsetsString);
-					loadedOffsetFileName = ctx.LazyExtras.io.LoadedFileName();
-					loadedOffsetPoseDir = ctx.LazyExtras.io.LastLoadDirectory();
-					loadedOffsetDirFriendly = ctx.LazyExtras.io.LastLoadDirectory(true);
+					var _ = ctx.LazyExtras.io.ReadFile(res[0]);
+
+					if(_ != null) {
+						offsetsString = _.Value.data;
+						loadedOffsetFileName = _.Value.filename;
+						loadedOffsetPoseDir = _.Value.dir;
+						loadedOffsetDirFriendly = _.Value.dirname;
+
+						offsets = ctx.LazyExtras.actors.GenerateOffsetObject(offsetsString);
+					}
+
 				}
 				dialogOpen = false;
 				});

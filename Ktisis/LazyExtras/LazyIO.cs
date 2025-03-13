@@ -123,9 +123,10 @@ public class LazyIO :IDisposable {
 			var loc = (_fdm.GetType()
 				.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
 				.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
+
 			_lastLoadDirectory = loc;
 			_readFileName = Path.GetFileName(items);
-			_readFileData = ReadFile(items) ?? "";
+			_readFileData = ReadFileContents(items) ?? "";
 
 			dbg($"Loading from dir: {loc}");
 			dbg($"Load data from: {items}");
@@ -179,7 +180,7 @@ public class LazyIO :IDisposable {
 
 	// Config
 	private LazyIOSettings GetConfig() {
-		if(ReadFile(GetConfigPath()) is not string d) {
+		if(ReadFileContents(GetConfigPath()) is not string d) {
 			dbg("Unable to load settings, regenerating.");
 			return new LazyIOSettings();
 		}
@@ -206,7 +207,11 @@ public class LazyIO :IDisposable {
 
 	// File
 
-	public string? ReadFile(string path) {
+	public (string data, string filename, string dir, string dirname)? ReadFile(string path) {
+		if(ReadFileContents(path) is not string data) return null;
+		return (data, LoadedFileName(), LastLoadDirectory(), LastLoadDirectory(true));
+	}
+	private string? ReadFileContents(string path) {
 		try {
 			var d = File.ReadAllText(path);
 			return d;
