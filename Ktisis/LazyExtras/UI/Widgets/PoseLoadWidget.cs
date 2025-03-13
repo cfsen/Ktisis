@@ -77,14 +77,16 @@ class PoseLoadWidget :ILazyWidget {
 			dialogOpen = true;
 			ctx.LazyExtras.io.OpenPoseDialog((valid, res) => {
 				if (valid) {
-					JsonFileSerializer jfs = new();
-					if (jfs.Deserialize<PoseFile>(ctx.LazyExtras.io.LoadFileData()) is PoseFile pf)
-					{
-						loadedPose = pf;
-						loadedPoseName = ctx.LazyExtras.io.LoadedFileName();
-						loadedPoseDir = ctx.LazyExtras.io.LastLoadDirectory();
-						loadedPoseDirFriendly = ctx.LazyExtras.io.LastLoadDirectory(true);
-						fn.UpdateState(loadedPoseDir, loadedPoseName);
+					var _ = ctx.LazyExtras.io.ReadFile(res[0]);
+					if(_ != null) {
+						JsonFileSerializer jfs = new();
+						if (jfs.Deserialize<PoseFile>(_.Value.data) is PoseFile pf) {
+							loadedPose = pf;
+							loadedPoseName = _.Value.filename;
+							loadedPoseDir = _.Value.dir;
+							loadedPoseDirFriendly = _.Value.dirname;
+							fn.UpdateState(loadedPoseDir, loadedPoseName);
+						}
 					}
 				}
 				dialogOpen = false;
@@ -159,7 +161,7 @@ class PoseLoadWidget :ILazyWidget {
 		if(jsondata == null) return;
 
 		JsonFileSerializer jfs = new();
-		if (jfs.Deserialize<PoseFile>(jsondata) is PoseFile pf) {
+		if (jfs.Deserialize<PoseFile>(jsondata.Value.data) is PoseFile pf) {
 			loadedPose = pf;
 			loadedPoseName = fn.FileNameFriendly;
 		}
