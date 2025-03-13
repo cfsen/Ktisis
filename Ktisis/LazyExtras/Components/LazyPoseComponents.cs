@@ -18,6 +18,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Diagnostics;
 using Ktisis.Editor.Transforms.Types;
 using Ktisis.Actions.Types;
+using Ktisis.Structs.Camera;
 
 namespace Ktisis.LazyExtras.Components;
 /*
@@ -35,8 +36,7 @@ public class LazyPoseComponents {
 
 	public Vector3 TargetLookPosition = Vector3.Zero;
 
-	// TODO Pre-emptive implementation of an offset angle to apply when using head orientation for neutral gaze
-	public float neutralEyeHeadOffset = 0.0f;
+	public float GazeFocalPointScalar = 0.0f;
 
 	public LazyPoseComponents(IEditorContext _ctx, LazyMaths _math) {
 		this.ctx = _ctx;
@@ -107,7 +107,8 @@ public class LazyPoseComponents {
 
 		// xfm
 		// Grab postion from current camera
-		if(this.ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
+		//if(this.ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
+		if(CalcCameraPosition() is not Vector3 target) return;
 		var children = ae.Recurse().ToList();
 		this.SetGaze(children, target);
 
@@ -154,9 +155,10 @@ public class LazyPoseComponents {
 				var id = Matrix4x4.Identity;
 				var target = Vector3.Transform(worldTarget, wtd.WorldToLocal);
 				var rot = this.mathx.VectorAngles(target);
+				rot.X += GazeFocalPointScalar*(i == 0 ? 1 : -1);
 
 				// Limit eye rotation
-				this.EyesAngleClamp(ref rot);
+				this.EyesAngleClamp(ref rot, i == 0);
 
 				// Yaw then pitch in local space. This prevents eyes rolling.
 				id *= Matrix4x4.CreateRotationY(rot.X);
@@ -176,10 +178,10 @@ public class LazyPoseComponents {
 	/// Limits rotation of eyes
 	/// </summary>
 	/// <param name="rot">Result from VectorAngles()</param>
-	private void EyesAngleClamp(ref Vector3 rot) {
-		//dbg($"{rot.X*180/MathF.PI} / {rot.Y*180/MathF.PI} / {rot.Z*180/MathF.PI}");
-		float eyeMaxYaw = this.mathx.DegToRad(42.0f);
-		float eyeMinYaw = this.mathx.DegToRad(-36.0f);
+	private void EyesAngleClamp(ref Vector3 rot, bool left) {
+
+		float eyeMaxYaw = this.mathx.DegToRad(left ? (float)42.0f : (float)36.0f);
+		float eyeMinYaw = this.mathx.DegToRad(left ? (float)-36.0f : (float)-42.0f);
 		float eyeMaxPitch = this.mathx.DegToRad(24.0f);
 		float eyeMinPitch = this.mathx.DegToRad(-42.0f);
 		rot.X = Math.Clamp(rot.X, eyeMinYaw, eyeMaxYaw);
@@ -221,7 +223,7 @@ public class LazyPoseComponents {
 		// This is the groundwork for orienting the eyes to other directions
 		Quaternion neutral = Quaternion.CreateFromRotationMatrix(head);
 		// The head bone orientation is almost perfectly oriented for a neutral gaze, but is rotated 180* around X.
-		neutral *= Quaternion.CreateFromYawPitchRoll(0.0f, MathF.PI+this.neutralEyeHeadOffset, 0.0f);
+		neutral *= Quaternion.CreateFromYawPitchRoll(0.0f, MathF.PI, 0.0f);
 		// The eyes are now neutral. Any orientation needs to happen after this.
 		foreach(Transform eye in eyes) 
 			eye.Rotation = neutral;
@@ -268,15 +270,20 @@ public class LazyPoseComponents {
 	/// Calculates the current postion of the camera in world space.
 	/// </summary>
 	/// <returns>Vector3 on success, null on failure.</returns>
-	private Vector3? CalcCameraPosition() {
+	private unsafe Vector3? CalcCameraPosition() {
 		if (this.ctx.Cameras.Current is not EditorCamera ec) return null;
-		Vector3 target = Vector3.Zero;
-		if (ec.FixedPosition != null)
-			target += ec.FixedPosition ?? Vector3.Zero;
-		else
-			target += ec.GetPosition() ?? Vector3.Zero;
-		//target += ec.RelativeOffset; // Verify if this should be included.
-		return target;
+
+		if(ec.GetPosition() is not Vector3 ect) return null;
+		if(ec.FixedPosition is Vector3 fpos)
+		{
+			dbg($"fpos={fpos}");
+			//GameCameraEx* gc = ec.Camera;
+			dbg($"Camera->Position={ec.Camera->Position}");
+			ect = ec.Camera->Position;
+		}
+		
+		dbg($"Cam pos: {ect}");
+		return ect;
 	}
 
 	// TODO test
