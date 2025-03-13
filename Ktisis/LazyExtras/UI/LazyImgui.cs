@@ -62,6 +62,7 @@ public class LazyImgui : KtisisWindow {
 		this.Initialize();
 		this.SetShowUi();
 		
+		//this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera;
 		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera ^ LazyWidgetCat.Misc;
 	}
 
@@ -69,6 +70,7 @@ public class LazyImgui : KtisisWindow {
 
 	private void Initialize() {
 		this.Widgets = [
+			//new DbgWidget(ctx),
 			new ActorOffsetWidget(ctx),
 			new PoseFaceWidget(ctx, tex),
 			new PoseWidget(ctx),
