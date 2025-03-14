@@ -27,23 +27,11 @@ public class PenumbraIpcProvider {
 	}
 
 	public Dictionary<Guid, string> GetCollections() => this._getCollections.Invoke();
-
-	public (Guid Id, string Name) GetCollectionForObject(IGameObject gameObject) {
-		var (valid, set, collection) = this._getCollectionForObject.Invoke(gameObject.ObjectIndex);
-		return collection;
-	}
-
-	public bool SetCollectionForObject(IGameObject gameObject, Guid id) {
-		Ktisis.Log.Verbose($"Setting collection for '{gameObject.Name}' ({gameObject.ObjectIndex}) to '{id}'");
-		
-		var (result, prev) = this._setCollectionForObject.Invoke(gameObject.ObjectIndex, id, true, true);
-		
-		var success = result == PenumbraApiEc.Success;
-		if (!success)
-			Ktisis.Log.Warning($"Penumbra collection set failed with return code: {result}");
-		return success;
-	}
-
+	public (bool objectValid, bool individualSet, (Guid Id, string Name) effectiveCollection) GetCollectionForObject(IGameObject gameObject) 
+		=> this._getCollectionForObject.Invoke(gameObject.ObjectIndex);
+	public (PenumbraApiEc, (Guid Id, string Name)? OldCollection) SetCollectionForObject(int gameObjectIdx, Guid? collectionId, 
+		bool allowCreateNew = true, bool allowDelete = true)
+		=> this._setCollectionForObject.Invoke(gameObjectIdx, collectionId, allowCreateNew, allowDelete);
 	public int GetAssignedParentIndex(IGameObject gameObject) {
 		return this._getCutsceneParentIndex.Invoke(gameObject.ObjectIndex);
 	}
