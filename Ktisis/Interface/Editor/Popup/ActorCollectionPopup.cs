@@ -38,13 +38,16 @@ public class ActorCollectionPopup : KtisisPopup {
 			return;
 		}
 
-		this._current = this._ipc.GetCollectionForObject(this._entity.Actor);
+		var penumbraGetCollection = this._ipc.GetCollectionForObject(this._entity.Actor);
+		this._current = penumbraGetCollection.effectiveCollection;
 		ImGui.Text($"Assigning collection for {this._entity.Name}");
 		ImGui.TextDisabled($"Currently set to: {this._current}");
 
 		var list = this._ipc.GetCollections().ToList();
 		if (this._list.Draw(list, out var selected)) {
-			if (this._ipc.SetCollectionForObject(this._entity.Actor, selected.Key))
+			Ktisis.Log.Debug(this._entity.Actor.ObjectIndex.ToString());
+			var penumbraSetCollection = this._ipc.SetCollectionForObject(this._entity.Actor.ObjectIndex, selected.Key);
+			if (penumbraGetCollection.objectValid)
 				this._entity.Redraw();
 		}
 	}
