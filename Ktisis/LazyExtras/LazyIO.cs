@@ -7,11 +7,13 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 using Ktisis.Common.Extensions;
+using Ktisis.Core.Attributes;
 
 using Lumina.Excel.Sheets;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,6 +23,7 @@ using System.Threading.Tasks;
 
 
 namespace Ktisis.LazyExtras;
+[Singleton]
 public class LazyIO :IDisposable {
 	private FileDialogManager _fdm;
 	private IDalamudPluginInterface _dpi;
@@ -37,7 +40,7 @@ public class LazyIO :IDisposable {
 	public LazyIO(IDalamudPluginInterface dpi) {
 		_fdm = new();
 		_dpi = dpi;
-		_cfg = GetConfig();
+		_cfg = GetIOConfig();
 		SetupQuickAccess();
 	}
 
@@ -179,8 +182,14 @@ public class LazyIO :IDisposable {
 	//private string GetDirName(string d)		=>	d.Substring(d.LastIndexOf('\\')+1, d.Length-d.LastIndexOf('\\')-1);
 
 	// Config
-	private LazyIOSettings GetConfig() {
-		if(ReadFileContents(GetConfigPath()) is not string d) {
+	public string GetConfigPath(string cfgName) {
+		return Path.Join(_dpi.GetPluginConfigDirectory(), cfgName);
+	}
+	public void SaveConfig(string configName, string configData) {
+		SaveFile(GetConfigPath(configName), configData);
+	}
+	private LazyIOSettings GetIOConfig() {
+		if(ReadFileContents(GetConfigPath("LazySettings.json")) is not string d) {
 			dbg("Unable to load settings, regenerating.");
 			return new LazyIOSettings();
 		}
@@ -190,13 +199,9 @@ public class LazyIO :IDisposable {
 		}
 		return s;
 	}
-	private string GetConfigPath() {
-		return Path.Join(_dpi.GetPluginConfigDirectory(), "LazySettings.json");
-	}
-
-	private void SaveConfig() {
+	private void SaveIOConfig() {
 		var d = JsonSerializer.Serialize<LazyIOSettings>(_cfg);
-		SaveFile(GetConfigPath(), d);
+		SaveFile(GetConfigPath("LazySettings.json"), d);
 	}
 
 	// Directory scan
@@ -247,8 +252,11 @@ public class LazyIO :IDisposable {
 	}
 
 	public void Dispose() {
-		Ktisis.Log.Debug("LazyIO dispose");
-		SaveConfig();
+		//Stopwatch t = Stopwatch.StartNew();
+		SaveIOConfig();
+		//t.Stop();
+		//Ktisis.Log.Debug($"LazyIO disposed in {t.ElapsedMilliseconds}");
+		dbg("LazyIO disposing.");
 	}
 
 	private void dbg(string s) => Ktisis.Log.Debug($"LazyIO: {s}");

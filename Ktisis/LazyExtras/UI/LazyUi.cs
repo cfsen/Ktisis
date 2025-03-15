@@ -39,6 +39,15 @@ class LazyUi {
 		ImGui.Spacing();
 	}
 
+	public void DrawPseudoTable(string[] content) {
+		if(!(content.Length > 0)) return;
+		for(int i = 0; i < content.Length; i++) {
+			ImGui.Text(content[i]);
+			ImGui.SameLine();
+			ImGui.SetCursorPosX((i+1)*uis.SidebarW/content.Length);
+		}
+	}
+
 	// Slider inputs
 
 	public bool SliderTableRow(string s, ref Vector3 val, SliderFormatFlag type, ref bool stateChanged) {

@@ -16,7 +16,7 @@ public enum LazyWidgetCat {
 	Selection = 16,
 	Misc = 32,
 	Transformers = 64,
-	API = 128,
+	Scene = 128,
 	Smart = 256
 }
 public interface ILazyWidget {

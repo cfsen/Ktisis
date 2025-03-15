@@ -17,6 +17,7 @@ using Ktisis.Editor.Transforms;
 using Ktisis.Interface.Editor;
 using Ktisis.Interop;
 using Ktisis.LazyExtras;
+using Ktisis.LazyExtras.Components;
 using Ktisis.Scene;
 using Ktisis.Scene.Factory;
 using Ktisis.Services.Data;
@@ -68,7 +69,10 @@ public class ContextBuilder {
 		var select = new SelectManager(context);
 		var attach = new AttachManager();
 		var autoSave = new PoseAutoSave(context, this._framework, this._format);
-		var lazyExtras = new LazyBase(context, select, this._framework, this._dpi);
+
+		var lazyIO = new LazyIO(this._dpi);
+		var lazyIpc = new LazyIpcIntegrator(context, lazyIO);
+		var lazyExtras = new LazyBase(context, select, this._framework, this._dpi, lazyIO, lazyIpc);
 
 		var editor = new EditorState(context, scope) {
 			Actions = actions,
