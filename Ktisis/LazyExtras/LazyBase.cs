@@ -1,34 +1,18 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.ImGuiFileDialog;
-using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-
-using ImGuiNET;
 
 using Ktisis.Core.Attributes;
 using Ktisis.Editor.Context.Types;
 using Ktisis.Editor.Selection;
-using Ktisis.Interface.Overlay;
-using Ktisis.Interface.Windows;
 using Ktisis.LazyExtras.Components;
-using Ktisis.LazyExtras.Interfaces;
-using Ktisis.LazyExtras.UI.Widgets;
 using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.World;
-using Ktisis.Services.Plugin;
-using Ktisis.Structs.Camera;
-
-using Microsoft.Extensions.DependencyInjection;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 
 namespace Ktisis.LazyExtras;
@@ -50,7 +34,7 @@ public class LazyBase :IDisposable {
 	public ActorEntity? SelectedActor;
 
 	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw, IDalamudPluginInterface dpi, LazyIO io, LazyIpcIntegrator ipc) {
-		Ktisis.Log.Debug("LazyBase init");
+		dbg("LazyBase init");
 		this.fw = fw;
 		this.fdm = new();
 		this.sel = sel;
@@ -153,8 +137,7 @@ public class LazyBase :IDisposable {
 			return null;
 
 		var parent = parentProperty.GetValue(node);
-		if (parent != null)
-		{
+		if (parent != null) {
 			var res = Backtrack(parent, depth+1, maxdepth);
 			if (res != null)
 				return res;
@@ -168,7 +151,7 @@ public class LazyBase :IDisposable {
 		this.ipc.Dispose();
 		this.io.Dispose();
 		t.Stop();
-		Ktisis.Log.Debug($"LazyBase dependencies disposed in {t.ElapsedMilliseconds}.");
+		dbg($"LazyBase dependencies disposed in {t.ElapsedMilliseconds}.");
 	}
 
 	private void dbg(string s) => Ktisis.Log.Debug($"LazyBase: {s}");
