@@ -24,6 +24,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -31,18 +32,7 @@ using System.Threading.Tasks;
 
 
 namespace Ktisis.LazyExtras;
-/*
- * This is a very lazy solution to avoid deep/proper integration 
- * into the existing hierarchy. It's initialized in ContextBuilder,
- * and can also be found in the global context object (context.LazyExtras).
- * 
- * Responsibilities:
- * - Initializing and providing access to various lazy components
- * 
- * If at any point in the future this were to be integrated properly,
- * it should be a reasonably straightforward task.
- * 
- * */
+[Singleton]
 public class LazyBase :IDisposable {
 	public IFramework fw;
 	public FileDialogManager fdm;
@@ -55,10 +45,11 @@ public class LazyBase :IDisposable {
 	public LazyMaths math;
 	public LazyIO io;
 	public LazyActorOffsetsComponents actors;
+	public LazyIpcIntegrator ipc;
 
 	public ActorEntity? SelectedActor;
 
-	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw, IDalamudPluginInterface dpi) {
+	public LazyBase(IEditorContext ctx, ISelectManager sel, IFramework fw, IDalamudPluginInterface dpi, LazyIO io, LazyIpcIntegrator ipc) {
 		Ktisis.Log.Debug("LazyBase init");
 		this.fw = fw;
 		this.fdm = new();
@@ -66,16 +57,18 @@ public class LazyBase :IDisposable {
 		this.sel.Changed += ActorSelectionChanged;
 
 		this.math = new();
-		this.io = new(dpi);
+		this.io = io;
 		this.camera = new(ctx);
 		this.lights = new(ctx);
 		this.overlay = new(ctx);
 		this.pose = new(ctx, this.math);
 		this.actors = new(ctx);
+		this.ipc = ipc;
+
 	}
 
 	private void ActorSelectionChanged(ISelectManager sender) {
-		// TODO testing and cleanup
+		// TODO last light tracking
 		var selected = sender.GetSelected();
 
 		if(!selected.Any()) return;
@@ -170,9 +163,12 @@ public class LazyBase :IDisposable {
 	}
 
 	public void Dispose() {
-		Ktisis.Log.Debug("LazyBase dispose.");
+		Stopwatch t = Stopwatch.StartNew();
 		sel.Changed -= ActorSelectionChanged;
+		this.ipc.Dispose();
 		this.io.Dispose();
+		t.Stop();
+		Ktisis.Log.Debug($"LazyBase dependencies disposed in {t.ElapsedMilliseconds}.");
 	}
 
 	private void dbg(string s) => Ktisis.Log.Debug($"LazyBase: {s}");
