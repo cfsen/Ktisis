@@ -62,7 +62,6 @@ class PoseLoadWidget :ILazyWidget {
 			$"Pose loading: {ctx.LazyExtras.SelectedActor?.Name ?? "No target"}");
 		
 		DrawFilePicker();
-		fn.Draw();
 		DrawImportToggles();
 		ImGui.Dummy(new(0, uis.Space));
 		DrawApplyBtn();
@@ -71,8 +70,11 @@ class PoseLoadWidget :ILazyWidget {
 		ImGui.EndGroup();
 	}
 	private void DrawFilePicker() {
-		// 1st milestone
-		// show button to open dialog
+		using(ImRaii.Disabled(!ctx.Posing.IsEnabled || ctx.LazyExtras.SelectedActor == null)) {
+		fn.Draw();
+		}
+		ImGui.SameLine();
+
 		if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WLPLoadPoseBtn", uis.BtnSmall, "Load pose")) {
 			dialogOpen = true;
 			ctx.LazyExtras.io.OpenPoseDialog((valid, res) => {
@@ -92,12 +94,13 @@ class PoseLoadWidget :ILazyWidget {
 				dialogOpen = false;
 				});
 		}
-		ImGui.SameLine();
-		// show selected file
 		if(loadedPoseName != null) {
-			ImGui.BeginGroup();
-			ImGui.Text(loadedPoseName);
+			ImGui.SameLine();
 			ImGui.Text(loadedPoseDirFriendly);
+			ImGui.BeginGroup();
+			fn.DrawCyclePosition();
+			ImGui.SameLine();
+			ImGui.Text(loadedPoseName);
 			ImGui.EndGroup();
 		}
 	}

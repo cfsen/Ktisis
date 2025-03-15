@@ -56,21 +56,13 @@ class PoseFaceWidget :ILazyWidget {
 	}
 	public void Draw() {
 		ImGui.BeginGroup();
-		lui.DrawHeader(FontAwesomeIcon.Portrait, "Expression posing");
-		using var _ = ImRaii.TabBar("##pose_tabs");
-
-		var actors = this.ctx.Scene.Children
-			.Where(entity => entity is ActorEntity)
-			.Cast<ActorEntity>();
-
-		foreach (var actor in actors) {
-			using var tab = ImRaii.TabItem(actor.Name);
-			if (!tab.Success) continue;
+		lui.DrawHeader(FontAwesomeIcon.Portrait, $"Expression posing: {ctx.LazyExtras.SelectedActor?.Name ?? "No target"}");
 			
-			ImGui.Spacing();
-			
-			DrawView(actor, new(uis.SidebarW,600));
-		}
+		if(ctx.LazyExtras.SelectedActor != null)	
+			DrawView(ctx.LazyExtras.SelectedActor, new(uis.SidebarW,600));
+		else
+			ImGui.Text("No target selected.");
+
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}

@@ -50,9 +50,12 @@ class FileNavigator {
 		//ImGui.SetCursorPosX(uis.SidebarW-2*uis.BtnSmall.X-2*uis.Space);
 		if(lui.BtnIcon(Dalamud.Interface.FontAwesomeIcon.ArrowRight, $"CtrlFileNav{Filter}ArrowRight", uis.BtnSmall, "Next"))
 			TraverseDirectory(1);
-
 		}
 		ImGui.EndGroup();
+	}
+	public void DrawCyclePosition() {
+		if(Files.Count > 0) 
+			ImGui.Text($"{Cursor+1}/{Files.Count.ToString()}: ");
 	}
 	public void UpdateState(string path, string filePath) {
 		Reset();
