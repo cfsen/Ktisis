@@ -178,11 +178,11 @@ public class LazyImgui : KtisisWindow {
 
 		ImGui.BeginGroup();
 		if(lui.BtnIcon(FontAwesomeIcon.CloudSunRain, "EnvSettings", uis.BtnSmall, "Time and day settings"))
-			dbg("env settings");
+			this.ctx.Interface.ToggleEnvironmentWindow();
 
 		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
-			dbg("Settings");
+			this.ctx.Interface.ToggleConfigWindow();
 
 		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))

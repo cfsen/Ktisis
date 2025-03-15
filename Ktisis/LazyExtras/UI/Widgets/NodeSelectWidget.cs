@@ -103,10 +103,10 @@ class NodeSelectWidget :ILazyWidget {
 			//ImGui.SameLine();
 			if(lui.BtnIcon(FontAwesomeIcon.Save, "WNodeTreeSavePose", uis.BtnSmall, "Save pose"))
 				ExportPose(ae.Pose);		// TODO
-			ImGui.SameLine();
-			if(lui.BtnIcon(FontAwesomeIcon.LocationCrosshairs, "WNodeTreeTarget", uis.BtnSmall, "Target actor"))
-				ae.Actor.SetGPoseTarget();
 		}
+		ImGui.SameLine();
+		if(lui.BtnIcon(FontAwesomeIcon.LocationCrosshairs, "WNodeTreeTarget", uis.BtnSmall, "Target actor"))
+			ae.Actor.SetGPoseTarget();
 	}
 
 	// TODO
@@ -114,6 +114,7 @@ class NodeSelectWidget :ILazyWidget {
 		if (pose == null) return;
 		await _ctx.Interface.OpenPoseExport(pose);
 	}
+
 	// Draw frame
 
 	public void Draw(float height) {
@@ -133,8 +134,6 @@ class NodeSelectWidget :ILazyWidget {
 	// Draw scene entities
 
 	private static float IconSpacing => UiBuilder.IconFont.FontSize;
-
-
 	private float MinY;
 	private float MaxY;
 
