@@ -211,31 +211,35 @@ public class LazyImgui : KtisisWindow {
 		//ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.ArrowsAlt, "WMTransformers", uis.BtnSmall, "Transform widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Transformers), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Transformers;
+			widgetFilter ^= LazyWidgetCat.Transformers;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.UserCircle, "WMPortrait", uis.BtnSmall, "Portrait widgets", 
 			widgetFilter.HasFlag(LazyWidgetCat.Pose), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Pose;
+			widgetFilter ^= LazyWidgetCat.Pose;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.PersonRays, "WMGesture", uis.BtnSmall, "Gesture widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Gesture), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Gesture;
+			widgetFilter ^= LazyWidgetCat.Gesture;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.CameraRetro, "WMCamera", uis.BtnSmall, "Camera widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Camera), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Camera;
+			widgetFilter ^= LazyWidgetCat.Camera;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.Lightbulb, "WMLights", uis.BtnSmall, "Lights widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Light), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Light;
+			widgetFilter ^= LazyWidgetCat.Light;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.ObjectUngroup, "WMSelection", uis.BtnSmall, "Selection widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Selection), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Selection;
+			widgetFilter ^= LazyWidgetCat.Selection;
+		ImGui.SameLine();
+		if (lui.BtnIconState(FontAwesomeIcon.ObjectGroup, "WMAPI", uis.BtnSmall, "Scene widgets",
+			widgetFilter.HasFlag(LazyWidgetCat.Scene), 0xFF545253, 0xFF003300))
+			widgetFilter ^= LazyWidgetCat.Scene;
 		ImGui.SameLine();
 		if (lui.BtnIconState(FontAwesomeIcon.EllipsisH, "WMMisc", uis.BtnSmall, "Misc widgets",
 			widgetFilter.HasFlag(LazyWidgetCat.Misc), 0xFF545253, 0xFF003300))
-			widgetFilter = widgetFilter ^ LazyWidgetCat.Misc;
+			widgetFilter ^= LazyWidgetCat.Misc;
 		//lui.DrawHeader(FontAwesomeIcon.Crosshairs, (ctx.LazyExtras.SelectedActor?.Name ?? "No target"));
 	}
 

@@ -34,7 +34,7 @@ class ActorOffsetWidget :ILazyWidget {
 	private bool previewImport = true;
 
 	public ActorOffsetWidget(IEditorContext ctx) {
-		this.Category = LazyWidgetCat.Misc;
+		this.Category = LazyWidgetCat.Scene;
 		this.SupportsToolbelt = false;
 		this.SizeToolbelt = Vector2.Zero;
 		this.InToolbelt = false;
