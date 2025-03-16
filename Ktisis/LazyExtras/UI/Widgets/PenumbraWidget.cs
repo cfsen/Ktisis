@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Ktisis.LazyExtras.UI.Widgets;
 class PenumbraWidget :ILazyWidget {
@@ -26,7 +25,7 @@ class PenumbraWidget :ILazyWidget {
 	private LazyIpcIntegrator ipc;
 	private LazyUi lui;
 	private LazyUiSizes uis;
-
+	internal static readonly string[] tableHeaders = new string[]{"Actor", "Collection", "Favorite", "Set"};
 
 	public PenumbraWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.Scene;
@@ -76,7 +75,7 @@ class PenumbraWidget :ILazyWidget {
 			ImGui.TableSetColumnIndex(i % 3);
 
 			if(lui.BtnIcon(FontAwesomeIcon.Plus, $"WPNB_SpawnAct_LineNo{i}", uis.BtnSmaller, "Spawn")) {
-				Task.Run(async () => await ipc.SpawnFavorite(fav) );
+				ctx.LazyExtras.fw.RunOnTick(() => ipc.SpawnFavorite(fav) );
 			}
 
 			ImGui.SameLine();
@@ -91,7 +90,7 @@ class PenumbraWidget :ILazyWidget {
 	private void DrawActorsTable(List<LazyIpcFavorite> actors, bool allowDesignChange = false) {
 		if(actors == null || actors.Count < 1) return;
 
-		lui.DrawPseudoTable(new string[]{"Actor", "Collection", "Favorite", "Set"});
+		lui.DrawPseudoTable(tableHeaders);
 		ImGui.NewLine();
 		int i = 0;
 		foreach (var act in actors) {
