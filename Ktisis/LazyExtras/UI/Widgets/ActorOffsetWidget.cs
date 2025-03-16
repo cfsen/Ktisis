@@ -1,15 +1,13 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
-using FFXIVClientStructs.FFXIV.Component.GUI;
-
 using ImGuiNET;
 
-using Ktisis.Data.Json;
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Datastructures;
 using Ktisis.LazyExtras.Interfaces;
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -32,6 +30,7 @@ class ActorOffsetWidget :ILazyWidget {
 	private string? loadedOffsetPoseDir;
 	private string? loadedOffsetDirFriendly;
 	private bool previewImport = true;
+	private bool offsetLoadModeLocal = true;
 
 	public ActorOffsetWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.Scene;
@@ -53,19 +52,21 @@ class ActorOffsetWidget :ILazyWidget {
 
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.PeopleGroup, "Actor offsets");
-		
+
 		DrawImportControls();
 		ImGui.SameLine();
 		DrawFileOpenPicker();
 		ImGui.SameLine();
 		DrawExportControls();
 		ImGui.SameLine();
-		DrawPreviewSelect();
-		ImGui.NewLine();
+		ImGui.Checkbox("Local mode", ref offsetLoadModeLocal);
+		//ImGui.SameLine();
+		//DrawPreviewSelect();
+		//ImGui.NewLine();
 
 		DrawLoadedFileInfo();
 
-		DrawPreview();
+		//DrawPreview();
 
 		lui.DrawFooter();
 		ImGui.EndGroup();
@@ -74,7 +75,7 @@ class ActorOffsetWidget :ILazyWidget {
 		using(ImRaii.Disabled(offsetsString == null)) {
 			if(lui.BtnIcon(FontAwesomeIcon.ExclamationTriangle, "WAOFSetOffsets", uis.BtnSmall, "Set offsets") && offsetsString != null) {
 				ctx.LazyExtras.actors.ImportOffset(offsetsString);
-				ctx.LazyExtras.actors.ApplyOffset();
+				ctx.LazyExtras.actors.LoadScene(offsetLoadModeLocal);
 			}
 		}
 	}
@@ -88,37 +89,24 @@ class ActorOffsetWidget :ILazyWidget {
 	}
 	private void DrawPreview() {
 		ImGui.Dummy(new(0, uis.Space));
-		if(previewImport) {
-			ImGui.Text("Importing:");
-			ImGui.Text("Scene target:");
-			ImGui.SameLine();
-			ImGui.SetCursorPosX(uis.SidebarW/3);
-			ImGui.Text("File target:");
-			ImGui.SameLine();
-			ImGui.SetCursorPosX(2*uis.SidebarW/3);
+		if(previewImport) 
+			DrawPreviewTable("Importing:", offsets.Actors);
+		else 
+			DrawPreviewTable("Exporting:", ctx.LazyExtras.actors.aof.Actors);
+	}
+	private void DrawPreviewTable(string tableHeader, List<LazyActorOffsetElement> actors) {
+		ImGui.Text(tableHeader);
+		ImGui.Text("Scene target:");
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(uis.SidebarW/3);
+		ImGui.Text("File target:");
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(2*uis.SidebarW/3);
 
-			ImGui.NewLine();
-			if(offsets.Actors.Any()) {
-				foreach(var actor in offsets.Actors) 
-					DrawActorLine(actor.Name, actor.Name, actor.Position);
-			}
-		}
-		else {
-			ImGui.Text("Exporting:");
-			ImGui.Text("Scene target:");
-			ImGui.SameLine();
-			ImGui.SetCursorPosX(uis.SidebarW/3);
-			ImGui.Text("File target:");
-			ImGui.SameLine();
-			ImGui.SetCursorPosX(2*uis.SidebarW/3);
-
-			ImGui.NewLine();
-			if (ctx.LazyExtras.actors.aof.Actors.Any())
-			{
-				foreach (var actor in ctx.LazyExtras.actors.aof.Actors)
-					DrawActorLine(actor.Name, actor.Name, actor.Position);
-			}
-		}
+		ImGui.NewLine();
+		if (actors.Any())
+			foreach (var actor in ctx.LazyExtras.actors.aof.Actors)
+				DrawActorLine(actor.Name, actor.Name, actor.Position);
 	}
 	private void DrawActorLine(string sceneActor, string fileActor, Vector3 actorPos) {
 		ImGui.Text(sceneActor);
@@ -131,16 +119,17 @@ class ActorOffsetWidget :ILazyWidget {
 	}
 	private void DrawExportControls() {
 		ImGui.BeginGroup();
-		if(lui.BtnIcon(FontAwesomeIcon.ArrowsSpin, "WAOFRefreshExport", uis.BtnSmall, "Refresh export"))
-			ctx.LazyExtras.actors.UpdateAOF();
-		ImGui.SameLine();
+		//if(lui.BtnIcon(FontAwesomeIcon.ArrowsSpin, "WAOFRefreshExport", uis.BtnSmall, "Refresh export"))
+		//	ctx.LazyExtras.actors.UpdateAOF();
+		//ImGui.SameLine();
 		if(lui.BtnIcon(FontAwesomeIcon.Save, "WAOFExportFile", uis.BtnSmall, "Export")) {
 			dialogOpen = true;
+			ctx.LazyExtras.actors.UpdateAOF();
 			ctx.LazyExtras.io.SetSaveBuffer(ctx.LazyExtras.actors.ExportOffsets());
 			ctx.LazyExtras.io.OpenOffsetSaveDialog((valid, res) => {
 				if (valid) {
 					dbg("Success: saving offsets.");
-					dbg(res);
+					//dbg(res);
 				}
 				dialogOpen = false;
 				});
@@ -150,10 +139,12 @@ class ActorOffsetWidget :ILazyWidget {
 	private void DrawLoadedFileInfo() {
 		// show selected file
 		if(loadedOffsetFileName != null) {
-			ImGui.SameLine();
 			ImGui.BeginGroup();
 			ImGui.Text(loadedOffsetFileName);
-			ImGui.Text(loadedOffsetDirFriendly);
+			//ImGui.Text(loadedOffsetDirFriendly);
+			ImGui.SameLine();
+			ImGui.Text($"Actors: {ctx.LazyExtras.actors.aof.Actors.Count}");
+			ImGui.Text(string.Join(" | ", ctx.LazyExtras.actors.aof.Actors.Select(a => a.Name)));
 			ImGui.EndGroup();
 		}
 	}
@@ -171,7 +162,8 @@ class ActorOffsetWidget :ILazyWidget {
 						loadedOffsetPoseDir = _.Value.dir;
 						loadedOffsetDirFriendly = _.Value.dirname;
 
-						offsets = ctx.LazyExtras.actors.GenerateOffsetObject(offsetsString);
+						ctx.LazyExtras.actors.ImportOffset(offsetsString);
+						offsets = ctx.LazyExtras.actors.aof;
 					}
 
 				}
