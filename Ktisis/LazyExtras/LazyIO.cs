@@ -70,7 +70,7 @@ public class LazyIO :IDisposable {
 		_dialogOpen = true;
 		dbg(_cfg.LastLoadPoseDir);
 		_fdm.OpenFileDialog("Load pose file", ".koffsets", 
-			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Load), 1, _cfg.LastLoadPoseDir);
+			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Load), 1, _cfg.LastLoadOffsetDir);
 	}
 	public void OpenPoseDirDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
@@ -93,7 +93,7 @@ public class LazyIO :IDisposable {
 	public void OpenOffsetSaveDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.SaveFileDialog("Save offsets", ".koffsets", "Offsets", ".koffsets", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastLoadPoseDir);
+			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastSaveOffsetDir);
 	}
 
 	// Callbacks
@@ -151,15 +151,24 @@ public class LazyIO :IDisposable {
 		bool save = dtype.HasFlag(LazyIOFlag.Save);
 		bool pose = dtype.HasFlag(LazyIOFlag.Poses);
 
-		if (load && pose) {
-			_cfg.LastLoadPoseDir = loc;
+		if (dtype.HasFlag(LazyIOFlag.Load)) {
+			if(dtype.HasFlag(LazyIOFlag.Poses))
+				_cfg.LastLoadPoseDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Lights))
+				_cfg.LastLoadLightDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Offset))
+				_cfg.LastLoadOffsetDir = loc;
 		}
-		if (save && pose)
-		{
-			_cfg.LaseSavePoseDir = loc;
+		else if(dtype.HasFlag(LazyIOFlag.Save)) {
+			if(dtype.HasFlag(LazyIOFlag.Poses))
+				_cfg.LaseSavePoseDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Lights))
+				_cfg.LastSaveLightDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Offset))
+				_cfg.LastSaveOffsetDir = loc;
 		}
-
 	}
+
 	// Quick access 
 
 	private void SetupQuickAccess(bool pose = true) {
@@ -269,13 +278,18 @@ public enum LazyIOFlag {
 	Lights = 4,
 	Poses = 8,
 	Expression = 16,
-	Offset = 32
+	Offset = 32,
+	Scene = 64
 }
 
 [Serializable]
 public class LazyIOSettings {
 	public string LastLoadPoseDir { get; set; } = "";
 	public string LaseSavePoseDir { get; set; } = "";
+	public string LastSaveOffsetDir { get; set; } = "";
+	public string LastLoadOffsetDir { get; set; } = "";
+	public string LastSaveSceneDir { get; set; } = "";
+	public string LastLoadSceneDir { get; set; } = "";
 	public string LastLoadLightDir { get; set; } = "";
 	public string LastSaveLightDir { get; set; } = "";
 	public List<string> PoseDirectories { get; set; } = [];
