@@ -28,7 +28,7 @@ class PenumbraWidget :ILazyWidget {
 	internal static readonly string[] tableHeaders = new string[]{"Actor", "Collection", "Favorite", "Set"};
 
 	public PenumbraWidget(IEditorContext ctx) {
-		this.Category = LazyWidgetCat.Scene;
+		this.Category = LazyWidgetCat.Misc;
 		this.SupportsToolbelt = false;
 		this.SizeToolbelt = Vector2.Zero;
 		this.InToolbelt = false;

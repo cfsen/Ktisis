@@ -243,4 +243,9 @@ public class LazyActorOffsetsComponents {
 		return JsonConvert.SerializeObject(aof, Formatting.Indented);
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"LazyActorOffsets: {s}");
+
+	public LazyActorOffsetFile Export() {
+		UpdateAOF();
+		return aof;
+	}
 }

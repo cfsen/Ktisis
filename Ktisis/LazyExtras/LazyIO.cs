@@ -72,6 +72,12 @@ public class LazyIO :IDisposable {
 		_fdm.OpenFileDialog("Load pose file", ".koffsets", 
 			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Load), 1, _cfg.LastLoadOffsetDir);
 	}
+	public void OpenSceneDialog(Action<bool, List<string>> callback) {
+		_dialogOpen = true;
+		dbg(_cfg.LastLoadPoseDir);
+		_fdm.OpenFileDialog("Load scene", ".kscene", 
+			CreateCallback(callback, LazyIOFlag.Scene | LazyIOFlag.Load), 1, _cfg.LastLoadSceneDir);
+	}
 	public void OpenPoseDirDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.OpenFolderDialog("Open pose directory", 
@@ -93,7 +99,12 @@ public class LazyIO :IDisposable {
 	public void OpenOffsetSaveDialog(Action<bool, string> callback) {
 		_dialogOpen = true;
 		_fdm.SaveFileDialog("Save offsets", ".koffsets", "Offsets", ".koffsets", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastSaveOffsetDir);
+			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Save), _cfg.LastSaveOffsetDir);
+	}
+	public void OpenSceneSaveDialog(Action<bool, string> callback) {
+		_dialogOpen = true;
+		_fdm.SaveFileDialog("Save scene", ".kscene", "Scene", ".kscene", 
+			CreateCallback(callback, LazyIOFlag.Scene | LazyIOFlag.Save), _cfg.LastSaveSceneDir);
 	}
 
 	// Callbacks
@@ -158,6 +169,8 @@ public class LazyIO :IDisposable {
 				_cfg.LastLoadLightDir = loc;
 			else if(dtype.HasFlag(LazyIOFlag.Offset))
 				_cfg.LastLoadOffsetDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Scene))
+				_cfg.LastLoadSceneDir = loc;
 		}
 		else if(dtype.HasFlag(LazyIOFlag.Save)) {
 			if(dtype.HasFlag(LazyIOFlag.Poses))
@@ -166,6 +179,8 @@ public class LazyIO :IDisposable {
 				_cfg.LastSaveLightDir = loc;
 			else if(dtype.HasFlag(LazyIOFlag.Offset))
 				_cfg.LastSaveOffsetDir = loc;
+			else if(dtype.HasFlag(LazyIOFlag.Scene))
+				_cfg.LastSaveSceneDir = loc;
 		}
 	}
 

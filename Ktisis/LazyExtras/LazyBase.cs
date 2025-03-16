@@ -30,6 +30,7 @@ public class LazyBase :IDisposable {
 	public LazyIO io;
 	public LazyActorOffsetsComponents actors;
 	public LazyIpcIntegrator ipc;
+	public LazySceneManager scene;
 
 	public ActorEntity? SelectedActor;
 
@@ -48,7 +49,7 @@ public class LazyBase :IDisposable {
 		this.pose = new(ctx, this.math);
 		this.actors = new(ctx);
 		this.ipc = ipc;
-
+		this.scene = new(ctx);
 	}
 
 	private void ActorSelectionChanged(ISelectManager sender) {
