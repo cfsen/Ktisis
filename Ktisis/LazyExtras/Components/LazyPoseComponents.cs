@@ -107,7 +107,6 @@ public class LazyPoseComponents {
 
 		// xfm
 		// Grab postion from current camera
-		//if(this.ctx.Cameras.Current?.GetPosition() is not Vector3 target) return;
 		if(CalcCameraPosition() is not Vector3 target) return;
 		var children = ae.Recurse().ToList();
 		this.SetGaze(children, target);
@@ -119,6 +118,7 @@ public class LazyPoseComponents {
 
 	// Memento helpers
 
+	// TODO reused in ActorOffsets, refactor out of here
 	private void HistoryAdd(PoseMemento pm) {
 		this.ctx.Actions.History.Add(pm);
 	}
