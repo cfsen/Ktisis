@@ -326,6 +326,14 @@ public class LazyLightsComponents {
 	public Vector3 RGBToVector(int r, int g, int b) {
 		return new Vector3(r / 255.0f, g / 255.0f, b / 255.0f);
 	}
+
 	#endregion
+
+	// SceneManager 
+
+	// TODO
+	//public List<LazyKtisisLight> Export() {
+	//	return 
+	//}
 }
 

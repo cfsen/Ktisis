@@ -44,18 +44,32 @@ public class LazyIpcIntegrator : IDisposable {
 
 	// Manipulators
 
-	public async Task SpawnFavorite(LazyIpcFavorite lif) {
+	public async Task SpawnFavorite(LazyIpcFavorite lif, bool bypassFavorites = false) {
 		var entity = await ctx.Scene.GetModule<ActorModule>().Spawn();
 		entity.Name = lif.Name;
-		ApplyAssociatedDesign(lif);
+		ApplyAssociatedDesign(lif, bypassFavorites);
+	}
+	public async Task<ActorEntity> SpawnImportFavorite(LazyIpcFavorite lif, bool bypassFavorites = false) {
+		var entity = await ctx.Scene.GetModule<ActorModule>().Spawn();
+		entity.Name = lif.Name;
+		ApplyAssociatedDesign(lif, bypassFavorites);
+		return entity;
 	}
 
-	public void ApplyAssociatedDesign(LazyIpcFavorite lif) {
+	public void ApplyAssociatedDesign(LazyIpcFavorite lif, bool bypassFavorites = false) {
 		if(ctx.Scene.Recurse().Where(x => x.Name == lif.Name).FirstOrDefault() is not ActorEntity ae) return;
-		var fav = favorites.Actors.First(x => x.Name == lif.Name);
-
-		dbg("ApplyAssociatedDesign(), found lif:");
-		Dumplif(fav);
+		
+		LazyIpcFavorite fav;
+		if (!bypassFavorites) {
+			fav = favorites.Actors.First(x => x.Name == lif.Name);
+			dbg("ApplyAssociatedDesign(), found lif:");
+			Dumplif(fav);
+		}
+		else {
+			fav = lif;
+			dbg("ApplyAssociatedDesign(), bypassing saved favorites.");
+			Dumplif(fav);
+		}
 
 		if(fav.PenumbraCollection != null) {
 			var resetCol = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, null);
@@ -63,11 +77,13 @@ public class LazyIpcIntegrator : IDisposable {
 				dbg("Reset collection.");
 			var pRes = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, fav.PenumbraCollection);
 			if(pRes.Item1 == Penumbra.Api.Enums.PenumbraApiEc.Success)
-				dbg("Assigned new colelction");
+				dbg("Assigned new collection");
 			//dbg(pRes.ToString());
 		}
 		if(fav.GlamourerState != null) {
 			var gRes = ipc.GetGlamourerIpc().ApplyState(fav.GlamourerState, ae.Actor.ObjectIndex);
+			if(gRes == Glamourer.Api.Enums.GlamourerApiEc.Success)
+				dbg("Assigned design.");
 		}
 
 		ae.Redraw();
@@ -75,28 +91,30 @@ public class LazyIpcIntegrator : IDisposable {
 
 	// Buffer management
 
-	public void ScanSceneActors() {
+	public void ScanSceneActors(bool bypassFavorites = false) {
 		var actors = ctx.Scene.Recurse().OfType<ActorEntity>().ToList();
 		if(actors == null) return;
 		if(!ipc.IsGlamourerActive || !ipc.IsPenumbraActive) return;
 
 		bufferFavs.Clear();
 		foreach(var actor in actors) {
-			AddToBuffer(actor);
+			AddToBuffer(actor, bypassFavorites);
 		}
 	}
 
-	private unsafe void AddToBuffer(ActorEntity act) {
+	private unsafe void AddToBuffer(ActorEntity act, bool bypassFavorites) {
+		dbg($"AddToBuffer({bypassFavorites})");
 		LazyIpcFavorite lif = new(){ Name=act.Name };
 		lif.Persistent = favorites.Actors.Any(x => x.Name == act.Name);
 
-		if(lif.Persistent) {
+		if(lif.Persistent && !bypassFavorites) {
 			dbg("Loading persistent design");
 			LazyIpcFavorite fav = favorites.Actors.Where(x => x.Name == act.Name).First();
 			lif = fav;
 			fav.Present = true;
 		}
 		else {
+			dbg("Collecting state");
 			lif.Name = act.Name;
 
 			var glamourerState = ipc.GetGlamourerIpc().GetState(act.Actor.ObjectIndex);
@@ -190,6 +208,16 @@ public class LazyIpcIntegrator : IDisposable {
 	private void FavoritesSave() {
 		io.SaveConfig("LazyFavorites.json", FavoritesExport());
 	}
+
+	// SceneManager
+
+	public List<LazyIpcFavorite> Export() {
+		ScanSceneActors(true);
+		return bufferFavs;
+	}
+
+	// Dispose
+
 	public void Dispose() {
 		FavoritesSave();
 		dbg("LazyIpcIntegrator disposing.");
