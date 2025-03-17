@@ -63,10 +63,6 @@ public class LazyActorOffsetsComponents {
 			this.aof.Actors.Add(el);
 		}
 	}
-	// TODO should prob go in the final class that joins all of these together
-	//private void GetSceneCameras() {}
-	//private void GetSceneLights() {}
-	//private void GetIpcStates() {}	// TODO just use stuff from LazyIpc
 
 	// Validation
 
@@ -127,9 +123,7 @@ public class LazyActorOffsetsComponents {
 		dbg("Loading world offsets.");
 
 		foreach(var act in am) {
-			// capture state
-			var epc = new EntityPoseConverter(act.ae.Pose!);
-			var initial = epc.Save();
+			// TODO capture state for history (Memento currently doesn't support world positions)
 
 			if(act.ae.GetTransform() is Transform actXfm) {
 				dbg($"Applying offset to: {act.ae.Name}");
@@ -145,9 +139,6 @@ public class LazyActorOffsetsComponents {
 			else
 				dbg($"Failed to get transform for: {act.ae.Name}");
 
-			// push history
-			var final = epc.Save();
-			HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation | PoseTransforms.PositionRoot | PoseTransforms.Position | PoseTransforms.Scale));
 		}
 	}
 	public void ApplyOffsetLocal() {
@@ -164,9 +155,7 @@ public class LazyActorOffsetsComponents {
 
 
 		foreach(var act in am) {
-			// capture state
-			var epc = new EntityPoseConverter(act.ae.Pose!);
-			var initial = epc.Save();
+			// TODO capture state for history (Memento currently doesn't support world positions)
 
 			if(act == anchor) {
 				// TODO
@@ -205,26 +194,9 @@ public class LazyActorOffsetsComponents {
 			else
 				dbg($"Failed to get transform for: {act.ae.Name}");
 
-			// push history
-			var final = epc.Save();
-			HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation | PoseTransforms.PositionRoot | PoseTransforms.Position | PoseTransforms.Scale));
+			// TODO push history
 		}
 		
-	}
-
-	// Memento helpers
-		// TODO REFAC
-	private void HistoryAdd(PoseMemento pm) {
-		this.ctx.Actions.History.Add(pm);
-	}
-	private PoseMemento MementoCreate(EntityPoseConverter epc, PoseContainer initial, PoseContainer final, PoseTransforms flags) {
-		return new PoseMemento(epc) {
-			Modes = PoseMode.All,
-			Transforms = flags,
-			Bones = null,
-			Initial = initial,
-			Final = final
-		};
 	}
 
 	// JSON import/export

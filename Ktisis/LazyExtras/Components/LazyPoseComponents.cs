@@ -19,6 +19,7 @@ using System.Diagnostics;
 using Ktisis.Editor.Transforms.Types;
 using Ktisis.Actions.Types;
 using Ktisis.Structs.Camera;
+using Ktisis.LazyExtras.Helpers;
 
 namespace Ktisis.LazyExtras.Components;
 /*
@@ -27,7 +28,9 @@ namespace Ktisis.LazyExtras.Components;
  *		- Meaning this class should simply accept an ActorEntity as input, nothing more.
  * - There's a solid bit of redundant Linq in how transforms are done.
  *		- Streamline this and minimize resource usage
- *		- Do you even want to use linq vs. passing a list of needles and iterating? HashSet should be faster?
+ * - Move out:
+ *		- Overlay toggles
+ *		- Memento helpers (Make it fast to instance and add, target: 2 lines of code.
  * */
 public class LazyPoseComponents {
 	private IEditorContext ctx;
@@ -60,19 +63,15 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void ResetGaze(ActorEntity ae) {
 		if(ae == null || ae.Pose == null) return;
-		// capture state
-		var epc = new EntityPoseConverter(ae.Pose);
-		var initial = epc.Save();
+
+		LazyHelperMemento lhm = new(ctx, ae.Pose);
 		
-		// xfm
+		// Resets eyes to align with orientation of the head bone
 		var children = ae.Recurse().ToList();
 		if(this.GetEyesNeutral(children) is not List<Transform> eyes) return;
-
 		this.SetEyesTransform(children, eyes[0], eyes[1]);
 
-		// push history
-		var final = epc.Save();
-		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
+		lhm.Save();
 	}
 
 	/// <summary>
@@ -81,18 +80,14 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtWorldTarget(ActorEntity ae){
 		if(ae == null || ae.Pose == null) return;
-		// capture state
-		var epc = new EntityPoseConverter(ae.Pose);
-		var initial = epc.Save();
 
-		// xfm
-		var children = ae.Recurse().ToList();
+		LazyHelperMemento lhm = new(ctx, ae.Pose);
+
 		// Use set position from SetWorldGazeTarget as target
+		var children = ae.Recurse().ToList();
 		this.SetGaze(children, this.TargetLookPosition);
 
-		// push history
-		var final = epc.Save();
-		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
+		lhm.Save();
 	}
 
 	/// <summary>
@@ -101,35 +96,15 @@ public class LazyPoseComponents {
 	/// </summary>
 	public void SetGazeAtCurrentCamera(ActorEntity ae){
 		if(ae == null || ae.Pose == null) return;
-		// capture state
-		var epc = new EntityPoseConverter(ae.Pose);
-		var initial = epc.Save();
 
-		// xfm
+		LazyHelperMemento lhm = new(ctx, ae.Pose);
+
 		// Grab postion from current camera
 		if(CalcCameraPosition() is not Vector3 target) return;
 		var children = ae.Recurse().ToList();
 		this.SetGaze(children, target);
 
-		// push history
-		var final = epc.Save();
-		HistoryAdd(MementoCreate(epc, initial, final, PoseTransforms.Rotation));
-	}
-
-	// Memento helpers
-
-	// TODO reused in ActorOffsets, refactor out of here
-	private void HistoryAdd(PoseMemento pm) {
-		this.ctx.Actions.History.Add(pm);
-	}
-	private PoseMemento MementoCreate(EntityPoseConverter epc, PoseContainer initial, PoseContainer final, PoseTransforms flags) {
-		return new PoseMemento(epc) {
-			Modes = PoseMode.All,
-			Transforms = flags,
-			Bones = null,
-			Initial = initial,
-			Final = final
-		};
+		lhm.Save();
 	}
 
 	// Gaze logic 
