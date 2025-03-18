@@ -245,6 +245,13 @@ public class LazyIO :IDisposable {
 		op.Add("DefaultName", "Scene");
 		op.Add("DefaultExtension", ".kscene");
 		FlagLookup["Scene"] = op;
+
+		op = new Dictionary<string, string>();
+		op.Add("Title", "DEV");
+		op.Add("Extension", ".pose");
+		op.Add("DefaultName", "DEV");
+		op.Add("DefaultExtension", ".pose");
+		FlagLookup["Dev"] = op;
 		//dbg("Dict init");
 		//dbg(FlagLookup.Count.ToString());
 		//foreach(var k in FlagLookup)
@@ -319,16 +326,16 @@ public enum LazyIOFlag {
 	Save = 2,
 	Light = 4,
 	Pose = 8,
-	//Expression = 16,
+	Dev = 16,
 	Offset = 32,
 	Scene = 64,
 
 	LoadLight = Load | Light,
 	SaveLight = Save | Light,
+	LoadDev = Load | Dev,
+	SaveDev = Save | Dev,
 	LoadPose = Load | Pose,
 	SavePose = Save | Pose,
-	//LoadExpr = Load | Expression,
-	//SaveExpr = Save | Expression,
 	LoadOffset = Load | Offset,
 	SaveOffset = Save | Offset,
 	LoadScene = Load | Scene,
