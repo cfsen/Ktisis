@@ -12,6 +12,7 @@ using Ktisis.LazyExtras.UI.Controls;
 using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.Skeleton;
 
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Numerics;
@@ -61,7 +62,8 @@ class PoseLoadWidget :ILazyWidget {
 		lui.DrawHeader(FontAwesomeIcon.SquarePersonConfined, 
 			$"Pose loading: {ctx.LazyExtras.SelectedActor?.Name ?? "No target"}");
 		
-		DrawFilePicker();
+		//DrawFilePicker();
+		DrawImportExportControls();
 		DrawImportToggles();
 		ImGui.Dummy(new(0, uis.Space));
 		DrawApplyBtn();
@@ -69,31 +71,40 @@ class PoseLoadWidget :ILazyWidget {
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}
-	private void DrawFilePicker() {
-		using(ImRaii.Disabled(!ctx.Posing.IsEnabled || ctx.LazyExtras.SelectedActor == null)) {
-		fn.Draw();
-		}
-		ImGui.SameLine();
 
-		if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WLPLoadPoseBtn", uis.BtnSmall, "Load pose")) {
-			dialogOpen = true;
-			ctx.LazyExtras.io.OpenPoseDialog((valid, res) => {
-				if (valid) {
-					var _ = ctx.LazyExtras.io.ReadFile(res[0]);
-					if(_ != null) {
-						JsonFileSerializer jfs = new();
-						if (jfs.Deserialize<PoseFile>(_.Value.data) is PoseFile pf) {
-							loadedPose = pf;
-							loadedPoseName = _.Value.filename;
-							loadedPoseDir = _.Value.dir;
-							loadedPoseDirFriendly = _.Value.dirname;
-							fn.UpdateState(loadedPoseDir, loadedPoseName);
-						}
-					}
-				}
-				dialogOpen = false;
-				});
+	// Dialog handling
+
+	private (LazyIOFlag, string) IODataDispatcher() {
+		return (LazyIOFlag.Save | LazyIOFlag.Pose, "");
+	}
+	private void IODataReceiver(bool success, List<string>? data) {
+		if(!success) return;
+		if(data == null) return;
+
+		// 0: Data, 1: file name, 2: path to directory, 3: directory name
+		JsonFileSerializer jfs = new();
+		if(jfs.Deserialize<PoseFile>(data[0]) is PoseFile pf) {
+
+			loadedPose = pf;
+			loadedPoseName = data[1];
+			loadedPoseDir = data[2];
+			loadedPoseDirFriendly = data[3];
+
+			fn.UpdateState(loadedPoseDir, loadedPoseName);
 		}
+	}
+
+	// UI elements
+
+	private void DrawImportExportControls() {
+		using(ImRaii.Disabled(!ctx.Posing.IsEnabled || ctx.LazyExtras.SelectedActor == null)) {
+			fn.Draw();
+		}
+
+		//lui.BtnSave(IODataDispatcher, "WPOSELOAD_Dispathcer", "Save", ctx.LazyExtras.io);
+		ImGui.SameLine();
+		lui.BtnLoad(LazyIOFlag.Load | LazyIOFlag.Pose, IODataReceiver, "WPOSELOAD_Receiver", "Load", ctx.LazyExtras.io);
+
 		if(loadedPoseName != null) {
 			ImGui.SameLine();
 			ImGui.Text(loadedPoseDirFriendly);
@@ -184,10 +195,6 @@ class PoseLoadWidget :ILazyWidget {
 			ctx.Config.File.AnchorPoseSelectedBones,
 			ctx.Config.File.AnchorPoseSelectedBonesRotate
 			);
-	}
-
-	private void DrawAdvancedLoading() {
-		// new features here
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"PoseLoadWidget: {s}");
 }
