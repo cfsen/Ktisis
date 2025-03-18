@@ -22,18 +22,9 @@ using Ktisis.Structs.Camera;
 using Ktisis.LazyExtras.Helpers;
 
 namespace Ktisis.LazyExtras.Components;
-/*
- * REFAC TODO
- * - Get rid of direct checking for valid actor; use lazyextras.selectedactor instead.
- *		- Meaning this class should simply accept an ActorEntity as input, nothing more.
- * - There's a solid bit of redundant Linq in how transforms are done.
- *		- Streamline this and minimize resource usage
- * - Move out:
- *		- Overlay toggles
- *		- Memento helpers (Make it fast to instance and add, target: 2 lines of code.
- * */
 public class LazyPoseComponents {
 	private IEditorContext ctx;
+	public LazyPoseLerp lerp;
 
 	private LazyMaths mathx;
 
@@ -45,6 +36,7 @@ public class LazyPoseComponents {
 		this.ctx = _ctx;
 
 		this.mathx = _math;
+		this.lerp = new(ctx);
 	}
 
 	// Gaze control
@@ -171,7 +163,6 @@ public class LazyPoseComponents {
 	/// <param name="right">Transform for the right eye</param>
 	private void SetEyesTransform(List<SceneEntity> ae, Transform left, Transform right) {
 		this.ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
-			// TODO memento
 			if(ae.Where(x => x is BoneNode 
 				&& (x.Name == "Left Eye" || x.Name == "Right Eye" || x.Name == "Left Iris" || x.Name == "Right Iris"))
 				.ToList() 
@@ -259,31 +250,6 @@ public class LazyPoseComponents {
 		
 		dbg($"Cam pos: {ect}");
 		return ect;
-	}
-
-	// TODO test
-	public void dbgTestGAT(ActorEntity ae) {
-		HashSet<string> needles = new HashSet<string>{"Abdomen", "Waist"};
-		Stopwatch dwatch = Stopwatch.StartNew();
-		GetActorTransforms(ae, needles);
-		dwatch.Stop();
-		dbg($"time: {dwatch.ElapsedTicks} ticks");
-	}
-	public List<(string name, ITransform xfm)>? GetActorTransforms(ActorEntity ae, HashSet<string> needles) {
-		int found = 0;
-		List<(string name, ITransform xfm)> results = [];
-
-		foreach(var child in ae.Recurse()) {
-			if(needles.Contains(child.Name) && child is ITransform xfmc) {
-				results.Add((child.Name, xfmc));
-				found++;
-			}
-			if(found == needles.Count) break;
-		}
-
-		if(found != needles.Count) return null;
-
-		return results;
 	}
 
 	// Partial reference pose loading
