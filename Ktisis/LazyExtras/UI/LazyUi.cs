@@ -6,10 +6,13 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
 using ImGuiNET;
 
+using Ktisis.LazyExtras.UI.Widgets;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,6 +41,11 @@ class LazyUi {
 		ImGui.Text(header);
 		ImGui.Spacing();
 	}
+	public void DrawFooter() {
+		ImGui.Dummy(new(0, uis.BtnSmaller.Y/2));
+	}
+
+	// Data presentation
 
 	public void DrawPseudoTable(string[] content) {
 		if(!(content.Length > 0)) return;
@@ -113,8 +121,35 @@ class LazyUi {
 			return BtnIcon(icon, id, size, tooltip);
 		}
 	}
-	public void DrawFooter() {
-		ImGui.Dummy(new(0, uis.BtnSmaller.Y/2));
+
+	// TODO generic call handling
+	public void BtnSave(Func<(LazyIOFlag flag, string data)> dataDispatcher, string id, string tooltip, LazyIO io) {
+		if(BtnIcon(FontAwesomeIcon.Save, id, uis.BtnSmall, tooltip) && !io.dialogOpen) {
+			io.dialogOpen = true;
+			var (flag, data) = dataDispatcher();
+			io.SetSaveBuffer(data);
+			io.OpenDialogSave(flag, (success, result) => {
+				if (success) 
+					io.SetSaveBuffer("");
+				io.dialogOpen = false;
+			});
+		}
+	}
+	public void BtnLoad(LazyIOFlag flag, Action<bool, List<string>?> dataReceiver, string id, string tooltip, LazyIO io) {
+		if(BtnIcon(FontAwesomeIcon.FolderOpen, id, uis.BtnSmall, tooltip) && !io.dialogOpen) {
+			io.dialogOpen = true;
+			io.OpenDialogLoad(flag, (success, result) => {
+				if (success) {
+					List<string>? fileContents = io.ReadFile2(result[0]);
+					if(fileContents != null) {
+						dataReceiver(success, fileContents);
+					}
+					else
+						dataReceiver(false, null);
+				} 
+				io.dialogOpen = false;
+			});
+		}
 	}
 }
 

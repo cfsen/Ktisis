@@ -8,8 +8,11 @@ using ImGuiNET;
 
 using Ktisis.Common.Extensions;
 using Ktisis.Core.Attributes;
+using Ktisis.LazyExtras.Datastructures;
 
 using Lumina.Excel.Sheets;
+
+using Newtonsoft.Json;
 
 using System;
 using System.Collections.Generic;
@@ -18,100 +21,83 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 
 namespace Ktisis.LazyExtras;
 [Singleton]
 public class LazyIO :IDisposable {
-	private FileDialogManager _fdm;
-	private IDalamudPluginInterface _dpi;
+	private FileDialogManager fdm;
+	private IDalamudPluginInterface dpi;
 
-	private LazyIOSettings _cfg;
+	private LazyIOSettings cfg;
 	
-	private bool _dialogOpen = false;
+	public bool dialogOpen = false;
 
-	private string _readFileData = "";
-	private string _readFileName = "";
-	private string _saveBuffer = "";
-	private string _lastLoadDirectory = "";
+	private string readFileData = "";
+	private string readFileName = "";
+	private string saveBuffer = "";
+	private string lastLoadDirectory = "";
 
-	public LazyIO(IDalamudPluginInterface dpi) {
-		_fdm = new();
-		_dpi = dpi;
-		_cfg = GetIOConfig();
+	private Dictionary<string, Dictionary<string, string>> dialogUI;
+
+	public LazyIO(IDalamudPluginInterface _dpi) {
+		fdm = new();
+		dpi = _dpi;
+		cfg = GetIOConfig();
 		SetupQuickAccess();
+		dialogUI = DialogOpFlags();
 	}
 
 	// ImGui
 
-	public void DrawDialog() => _fdm.Draw();
-	public string LoadFileData() => _readFileData;
-	public string LastLoadDirectory(bool friendly = false) => friendly ? Path.GetFileName(_lastLoadDirectory) : _lastLoadDirectory;
+	public void DrawDialog() => fdm.Draw();
+	public string LastLoadDirectory(bool friendly = false) => friendly ? Path.GetFileName(lastLoadDirectory) : lastLoadDirectory;
 	public string GetFriendlyName(string path) => Path.GetFileName(path) ?? "Error: invalid path.";
-	public string LoadedFileName() => _readFileName;
-	public string SetSaveBuffer(string s) => _saveBuffer = s;
+	public string LoadedFileName() => readFileName;
+	public string SetSaveBuffer(string s) => saveBuffer = s;
 
-	// Imgui:load
+	// Dialog handlers
 
-	public void OpenLightDialog(Action <bool, List<string>> callback) {
-		_dialogOpen = true;
-		_fdm.OpenFileDialog("Load pose file", ".klights", 
-			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Load), 1, _cfg.LastLoadLightDir);
-	}
-	public void OpenPoseDialog(Action<bool, List<string>> callback) {
-		_dialogOpen = true;
-		dbg(_cfg.LastLoadPoseDir);
-		_fdm.OpenFileDialog("Load pose file", ".pose", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), 1, _cfg.LastLoadPoseDir);
-	}
-	public void OpenOffsetDialog(Action<bool, List<string>> callback) {
-		_dialogOpen = true;
-		dbg(_cfg.LastLoadPoseDir);
-		_fdm.OpenFileDialog("Load pose file", ".koffsets", 
-			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Load), 1, _cfg.LastLoadOffsetDir);
-	}
-	public void OpenSceneDialog(Action<bool, List<string>> callback) {
-		_dialogOpen = true;
-		dbg(_cfg.LastLoadPoseDir);
-		_fdm.OpenFileDialog("Load scene", ".kscene", 
-			CreateCallback(callback, LazyIOFlag.Scene | LazyIOFlag.Load), 1, _cfg.LastLoadSceneDir);
-	}
-	public void OpenPoseDirDialog(Action<bool, string> callback) {
-		_dialogOpen = true;
-		_fdm.OpenFolderDialog("Open pose directory", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Load), _cfg.LastLoadPoseDir);
-	}
+	public void OpenDialogLoad(LazyIOFlag flag, Action<bool, List<string>> callback) {
+		dialogOpen = true;
 
-	// Imgui:save
+		LazyIOFlag opType = flag.HasFlag(LazyIOFlag.Save) ? LazyIOFlag.Save : LazyIOFlag.Load;
+		string flagKey = (flag ^ opType).ToString();
 
-	public void OpenLightSaveDialog(Action<bool, string> callback) {
-		_dialogOpen = true;
-		_fdm.SaveFileDialog("Save lights", ".klights", "Lights", ".klights", 
-			CreateCallback(callback, LazyIOFlag.Lights | LazyIOFlag.Save), _cfg.LastLoadLightDir);
+		cfg.LastDirectory.TryGetValue(flag.ToString(), out string? path);
+
+		fdm.OpenFileDialog(
+			opType.ToString() + dialogUI[flagKey]["Title"], 
+			dialogUI[flagKey]["Extension"], 
+			CreateCallback(callback, flag), 
+			1, 
+			path ??= ""
+		);
 	}
-	public void OpenPoseSaveDialog(Action<bool, string> callback) {
-		_dialogOpen = true;
-		_fdm.SaveFileDialog("Save pose", ".pose", "Pose", ".pose", 
-			CreateCallback(callback, LazyIOFlag.Poses | LazyIOFlag.Save), _cfg.LastLoadPoseDir);
-	}
-	public void OpenOffsetSaveDialog(Action<bool, string> callback) {
-		_dialogOpen = true;
-		_fdm.SaveFileDialog("Save offsets", ".koffsets", "Offsets", ".koffsets", 
-			CreateCallback(callback, LazyIOFlag.Offset | LazyIOFlag.Save), _cfg.LastSaveOffsetDir);
-	}
-	public void OpenSceneSaveDialog(Action<bool, string> callback) {
-		_dialogOpen = true;
-		_fdm.SaveFileDialog("Save scene", ".kscene", "Scene", ".kscene", 
-			CreateCallback(callback, LazyIOFlag.Scene | LazyIOFlag.Save), _cfg.LastSaveSceneDir);
+	public void OpenDialogSave(LazyIOFlag flag, Action<bool, string> callback) {
+		dialogOpen = true;
+
+		LazyIOFlag opType = flag.HasFlag(LazyIOFlag.Save) ? LazyIOFlag.Save : LazyIOFlag.Load;
+		string flagKey = (flag ^ opType).ToString();
+
+		cfg.LastDirectory.TryGetValue(flag.ToString(), out string? path);
+
+		fdm.SaveFileDialog(
+			opType.ToString() + dialogUI[flagKey]["Title"], 
+			dialogUI[flagKey]["Extension"], 
+			dialogUI[flagKey]["DefaultName"], 
+			dialogUI[flagKey]["DefaultExtension"], 
+			CreateCallback(callback, flag), 
+			path ??= ""
+		);
 	}
 
 	// Callbacks
 
 	public Action<bool, string> CreateCallback(Action<bool, string> callback, LazyIOFlag dtype) {
 		return (valid, items) => {
-			_dialogOpen = false;
+			dialogOpen = false;
 
 			UpdateLastDir(dtype);
 			if(valid)
@@ -122,7 +108,7 @@ public class LazyIO :IDisposable {
 	} 
 	private Action<bool, List<string>> CreateCallback(Action<bool, List<string>> callback, LazyIOFlag dtype, bool save = false) {
 		return (valid, items) => { 
-			_dialogOpen = false;
+			dialogOpen = false;
 
 			UpdateLastDir(dtype);
 			if(valid)
@@ -134,99 +120,55 @@ public class LazyIO :IDisposable {
 
 	private void HandleCallback(string items, LazyIOFlag dtype) { 
 		if(dtype.HasFlag(LazyIOFlag.Load)) {
-			var loc = (_fdm.GetType()
+			var loc = (fdm.GetType()
 				.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
-				.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
+				.GetValue(fdm) as FileDialog)?.GetCurrentPath() ?? ".";
 
-			_lastLoadDirectory = loc;
-			_readFileName = Path.GetFileName(items);
-			_readFileData = ReadFileContents(items) ?? "";
+			lastLoadDirectory = loc;
+			readFileName = Path.GetFileName(items);
+			readFileData = ReadFileContents(items) ?? "";
 
 			dbg($"Loading from dir: {loc}");
 			dbg($"Load data from: {items}");
-			dbg($"Update name of last read file: {_readFileName}");
+			dbg($"Update name of last read file: {readFileName}");
 		}
 		else if(dtype.HasFlag(LazyIOFlag.Save)) {
 			dbg($"Save to file: {items}");
-			SaveFile(items, _saveBuffer);
+			SaveFile(items, saveBuffer);
 		}
 	}
 
 	private void UpdateLastDir(LazyIOFlag dtype) {
-		var loc = (_fdm.GetType()
+		var loc = (fdm.GetType()
 			.GetField("dialog", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
-			.GetValue(_fdm) as FileDialog)?.GetCurrentPath() ?? ".";
+			.GetValue(fdm) as FileDialog)?.GetCurrentPath() ?? ".";
 		dbg($"UpdateLastDir called. dtype={dtype}");
-		// Update last opened directory
-		bool load = dtype.HasFlag(LazyIOFlag.Load);
-		bool save = dtype.HasFlag(LazyIOFlag.Save);
-		bool pose = dtype.HasFlag(LazyIOFlag.Poses);
 
-		if (dtype.HasFlag(LazyIOFlag.Load)) {
-			if(dtype.HasFlag(LazyIOFlag.Poses))
-				_cfg.LastLoadPoseDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Lights))
-				_cfg.LastLoadLightDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Offset))
-				_cfg.LastLoadOffsetDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Scene))
-				_cfg.LastLoadSceneDir = loc;
-		}
-		else if(dtype.HasFlag(LazyIOFlag.Save)) {
-			if(dtype.HasFlag(LazyIOFlag.Poses))
-				_cfg.LaseSavePoseDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Lights))
-				_cfg.LastSaveLightDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Offset))
-				_cfg.LastSaveOffsetDir = loc;
-			else if(dtype.HasFlag(LazyIOFlag.Scene))
-				_cfg.LastSaveSceneDir = loc;
-		}
+		cfg.LastDirectory[dtype.ToString()] = loc;
+		dbg($"Setting: cfg.LastDirectory[{dtype.ToString()}] = {loc}");
+
 	}
 
 	// Quick access 
 
 	private void SetupQuickAccess(bool pose = true) {
-		if(_cfg.PoseDirectories.Count < 0) return;
+		if(cfg.PoseDirectories.Count < 0) return;
 		PurgeQuickAccessDefaults();
-		int i = _fdm.CustomSideBarItems.Count;
+		int i = fdm.CustomSideBarItems.Count;
 		string logBuffer = "Adding dirs: ";
-		foreach(var d in pose ? _cfg.PoseDirectories : _cfg.LightsDirectories) {
+		foreach(var d in pose ? cfg.PoseDirectories : cfg.LightsDirectories) {
 			logBuffer += Path.GetFileName(d) + ", ";
-			_fdm.CustomSideBarItems.Add((Path.GetFileName(d) ?? "Oh no", d, FontAwesomeIcon.Star, i));
+			fdm.CustomSideBarItems.Add((Path.GetFileName(d) ?? "Oh no", d, FontAwesomeIcon.Star, i));
 			i++;	
 		}
 		dbg(logBuffer);
 	}
 	private void PurgeQuickAccessDefaults() {
-		_fdm.CustomSideBarItems.Clear(); 
+		fdm.CustomSideBarItems.Clear(); 
 	}
-	private void AddPoseDir(string path)	=>	_cfg.PoseDirectories.Add(path);
-	private void AddLightsDir(string path)	=>	_cfg.LightsDirectories.Add(path);
+	private void AddPoseDir(string path)	=>	cfg.PoseDirectories.Add(path);
+	private void AddLightsDir(string path)	=>	cfg.LightsDirectories.Add(path);
 	//private string GetDirName(string d)		=>	d.Substring(d.LastIndexOf('\\')+1, d.Length-d.LastIndexOf('\\')-1);
-
-	// Config
-	public string GetConfigPath(string cfgName) {
-		return Path.Join(_dpi.GetPluginConfigDirectory(), cfgName);
-	}
-	public void SaveConfig(string configName, string configData) {
-		SaveFile(GetConfigPath(configName), configData);
-	}
-	private LazyIOSettings GetIOConfig() {
-		if(ReadFileContents(GetConfigPath("LazySettings.json")) is not string d) {
-			dbg("Unable to load settings, regenerating.");
-			return new LazyIOSettings();
-		}
-		if(DeserializeCfg(d) is not LazyIOSettings s) {
-			dbg("Unable to parse settings, regenerating.");
-			return new LazyIOSettings();
-		}
-		return s;
-	}
-	private void SaveIOConfig() {
-		var d = JsonSerializer.Serialize<LazyIOSettings>(_cfg);
-		SaveFile(GetConfigPath("LazySettings.json"), d);
-	}
 
 	// Directory scan
 
@@ -239,6 +181,10 @@ public class LazyIO :IDisposable {
 	public (string data, string filename, string dir, string dirname)? ReadFile(string path) {
 		if(ReadFileContents(path) is not string data) return null;
 		return (data, LoadedFileName(), LastLoadDirectory(), LastLoadDirectory(true));
+	}
+	public List<string>? ReadFile2(string path) {
+		if(ReadFileContents(path) is not string data) return null;
+		return [data, LoadedFileName(), LastLoadDirectory(), LastLoadDirectory(true)];
 	}
 	private string? ReadFileContents(string path) {
 		try {
@@ -261,11 +207,88 @@ public class LazyIO :IDisposable {
 		}
 	}
 
+	// UI helpers
+
+	private Dictionary<string, Dictionary<string, string>> DialogOpFlags() {
+		// Construct this once at initialization
+		Dictionary<string, Dictionary<string, string>> FlagLookup = new Dictionary<string, Dictionary<string, string>>(); 
+		// Weave save/load on demand
+		//if(flag.HasFlag(LazyIOFlag.Save))
+		//	op.Add("OpType", "Save");
+		//else
+		//	op.Add("OpType", "Load");
+
+		Dictionary<string, string> op = new Dictionary<string, string>();
+		op.Add("Title", "Lights preset");
+		op.Add("Extension", ".klights");
+		op.Add("DefaultName", "Lights");
+		op.Add("DefaultExtension", ".klights");
+		FlagLookup["Light"] = op;
+
+		op = new Dictionary<string, string>();
+		op.Add("Title", "Pose file");
+		op.Add("Extension", ".pose");
+		op.Add("DefaultName", "Pose");
+		op.Add("DefaultExtension", ".pose");
+		FlagLookup["Pose"] = op;
+		
+		op = new Dictionary<string, string>();
+		op.Add("Title", "Actor offsets");
+		op.Add("Extension", ".koffsets");
+		op.Add("DefaultName", "Offsets");
+		op.Add("DefaultExtension", ".koffsets");
+		FlagLookup["Offset"] = op;
+
+		op = new Dictionary<string, string>();
+		op.Add("Title", "Scene");
+		op.Add("Extension", ".kscene");
+		op.Add("DefaultName", "Scene");
+		op.Add("DefaultExtension", ".kscene");
+		FlagLookup["Scene"] = op;
+		//dbg("Dict init");
+		//dbg(FlagLookup.Count.ToString());
+		//foreach(var k in FlagLookup)
+		//{
+		//	dbg($"{k.Key}:{k.Value}");
+		//	foreach(var v in FlagLookup[k.Key])
+		//	{
+		//		dbg($"\t{v.Key}:{v.Value}");
+		//	}
+		//}
+		return FlagLookup;
+	}
+
+	// Config
+
+	public string GetConfigPath(string cfgName) {
+		return Path.Join(dpi.GetPluginConfigDirectory(), cfgName);
+	}
+	public void SaveConfig(string configName, string configData) {
+		SaveFile(GetConfigPath(configName), configData);
+	}
+	private LazyIOSettings GetIOConfig() {
+		if (ReadFileContents(GetConfigPath("LazySettings.json")) is not string d)
+		{
+			dbg("Unable to load settings, regenerating.");
+			return new LazyIOSettings();
+		}
+		if (DeserializeCfg(d) is not LazyIOSettings s)
+		{
+			dbg("Unable to parse settings, regenerating.");
+			return new LazyIOSettings();
+		}
+		return s;
+	}
+
 	// Deserialize, serialize
 
 	private LazyIOSettings? DeserializeCfg(string json) {
 		try {
-			var d = JsonSerializer.Deserialize<LazyIOSettings>(json);
+			var settings = new JsonSerializerSettings {
+				NullValueHandling = NullValueHandling.Ignore,
+				MissingMemberHandling = MissingMemberHandling.Ignore
+			};
+			var d = JsonConvert.DeserializeObject<LazyIOSettings>(json, settings);
 			if(d == null) return null;
 			return d;
 		}
@@ -273,6 +296,10 @@ public class LazyIO :IDisposable {
 			dbg("Failed to deserialize settings.");
 			return null;
 		}
+	}
+	private void SaveIOConfig() {
+		var d = JsonConvert.SerializeObject(cfg, Formatting.Indented);
+		SaveFile(GetConfigPath("LazySettings.json"), d);
 	}
 
 	public void Dispose() {
@@ -290,23 +317,29 @@ public class LazyIO :IDisposable {
 public enum LazyIOFlag {
 	Load = 1,
 	Save = 2,
-	Lights = 4,
-	Poses = 8,
-	Expression = 16,
+	Light = 4,
+	Pose = 8,
+	//Expression = 16,
 	Offset = 32,
-	Scene = 64
+	Scene = 64,
+
+	LoadLight = Load | Light,
+	SaveLight = Save | Light,
+	LoadPose = Load | Pose,
+	SavePose = Save | Pose,
+	//LoadExpr = Load | Expression,
+	//SaveExpr = Save | Expression,
+	LoadOffset = Load | Offset,
+	SaveOffset = Save | Offset,
+	LoadScene = Load | Scene,
+	SaveScene = Save | Scene,
+	AllTypes = Light | Pose | Offset | Scene
 }
 
+// TODO use dict<enum,path> to store shit
 [Serializable]
 public class LazyIOSettings {
-	public string LastLoadPoseDir { get; set; } = "";
-	public string LaseSavePoseDir { get; set; } = "";
-	public string LastSaveOffsetDir { get; set; } = "";
-	public string LastLoadOffsetDir { get; set; } = "";
-	public string LastSaveSceneDir { get; set; } = "";
-	public string LastLoadSceneDir { get; set; } = "";
-	public string LastLoadLightDir { get; set; } = "";
-	public string LastSaveLightDir { get; set; } = "";
+	public Dictionary<string, string> LastDirectory = [];
 	public List<string> PoseDirectories { get; set; } = [];
 	public List<string> LightsDirectories { get; set; } = [];
 	public bool PurgeDefaultQuickAxDirs { get; set; } = false;
