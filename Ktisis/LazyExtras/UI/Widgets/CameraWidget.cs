@@ -50,6 +50,7 @@ class CameraWidget :ILazyWidget {
 		// RFAC START
 
 		ImGui.BeginGroup();
+
 		ImGui.BeginGroup();
 		DrawJoystickConfig();
 		ImGui.SameLine();

@@ -6,6 +6,7 @@ using ImGuiNET;
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;
 
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Numerics;
@@ -39,14 +40,15 @@ class LightsWidget :ILazyWidget {
 		this.uis.RefreshScale();
 	}
 	public void Draw() {
-		if(dialogOpen)
-			ctx.LazyExtras.io.DrawDialog();
-
 		ImGui.BeginGroup();
 
 		lui.DrawHeader(FontAwesomeIcon.Lightbulb, "Lights");
-		DrawPresetSpawnControls();
 		DrawImportExportControls();
+		DrawPresetSpawnControls();
+
+		if(ImGui.Button("Remove all lights"))
+			ctx.LazyExtras.lights.LightsDeleteAll();
+
 		lui.DrawFooter();
 
 		ImGui.EndGroup();
@@ -60,46 +62,25 @@ class LightsWidget :ILazyWidget {
 		if(ImGui.Button("Apartment exterior"))
 			ctx.LazyExtras.lights.SpawnStudioApartmentAmbientLights();
 	}
+
+	// Dialog handling
+
+	private (LazyIOFlag, string) IODataDispatcher() {
+		ctx.LazyExtras.lights.LightsSave();
+		return (LazyIOFlag.Save | LazyIOFlag.Light, ctx.LazyExtras.lights._json);
+	}
+	private void IODataReceiver(bool success, List<string>? data) {
+		if (!success) return;
+		if (data == null) return;
+
+		// 0: Data, 1: file name, 2: path to directory, 3: directory name
+		ctx.LazyExtras.lights._json = data[0];
+		ctx.LazyExtras.lights.ImportLightJson(data[0]);
+	}
 	private void DrawImportExportControls() {
-		ImGui.Text("Import/Export");
-		if(ImGui.Button("Export")) {
-			dialogOpen = true;
-			ctx.LazyExtras.lights.LightsSave();
-			ctx.LazyExtras.io.SetSaveBuffer(ctx.LazyExtras.lights._json);
-			ctx.LazyExtras.io.OpenLightSaveDialog((valid, res) => {
-			switch (valid) {
-				case true:
-						dbg("Saving lights.");
-					break;
-				default:
-						dbg("Failed to save lights.");
-					break;
-			}
-			dialogOpen = false;
-			});
-		}
+		lui.BtnSave(IODataDispatcher, "WLIGHT_Dispathcer", "Save", ctx.LazyExtras.io);
 		ImGui.SameLine();
-
-		if(ImGui.Button("Import")) {
-			dialogOpen = true;
-			ctx.LazyExtras.io.OpenLightDialog((valid, res) => {
-			switch (valid) {
-				case true:
-					dbg("Lights loaded.");
-					ctx.LazyExtras.lights._json = ctx.LazyExtras.io.LoadFileData();
-					ctx.LazyExtras.lights.ImportLightJson(ctx.LazyExtras.io.LoadFileData());
-					break;
-				default:
-					dbg("Failed to load lights.");
-					break;
-			}
-			dialogOpen = false;
-			});
-		}
-		ImGui.SameLine();
-
-		if(ImGui.Button("Remove all lights"))
-			ctx.LazyExtras.lights.LightsDeleteAll();
+		lui.BtnLoad(LazyIOFlag.Load | LazyIOFlag.Light, IODataReceiver, "WLIGHT_Receiver", "Load", ctx.LazyExtras.io);
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"LightsWidget: {s}");
 }

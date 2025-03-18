@@ -70,7 +70,7 @@ public class LazyImgui : KtisisWindow {
 
 	private void Initialize() {
 		this.Widgets = [
-			//new DbgWidget(ctx),
+			new DbgWidget(ctx),
 			new SceneWidget(ctx),
 			new PenumbraWidget(ctx),
 			new ActorOffsetWidget(ctx),
@@ -106,6 +106,9 @@ public class LazyImgui : KtisisWindow {
 			this.UpdateSidebarSize();
 	}
 	public override void Draw() {
+		if(ctx.LazyExtras.io.dialogOpen)
+			ctx.LazyExtras.io.DrawDialog();
+
 		switch(this.Hidden) {
 			case false:
 				this.DrawWorkspace();

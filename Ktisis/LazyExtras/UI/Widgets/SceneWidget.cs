@@ -4,6 +4,7 @@ using ImGuiNET;
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;
 
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Ktisis.LazyExtras.UI.Widgets;
@@ -38,39 +39,29 @@ class SceneWidget :ILazyWidget {
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.Ad, "Scene");
 		
-		BtnSave();
-		ImGui.SameLine();
-		BtnLoad();
+		DrawImportExportControls();
 
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}
-	public void BtnSave() {
-		if(lui.BtnIcon(FontAwesomeIcon.Save, "WDG_SceneSave", uis.BtnSmall, "Export")) {
-			dialogOpen = true;
-			ctx.LazyExtras.io.SetSaveBuffer(ctx.LazyExtras.scene.ExportSceneFile());
-			ctx.LazyExtras.io.OpenSceneSaveDialog((valid, res) => {
-				if (valid) {
-					ctx.LazyExtras.scene.ExportSceneFile();
-				}
-				dialogOpen = false;
-				});
-		}
-	}
-	public void BtnLoad() {
-		if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WDG_SceneLoad", uis.BtnSmall, "Import scene")) {
-			dialogOpen = true;
-			ctx.LazyExtras.io.OpenSceneDialog((valid, res) => {
-				if (valid) {
-					var _ = ctx.LazyExtras.io.ReadFile(res[0]);
-					if(_ != null) {
-						ctx.LazyExtras.scene.Import(_.Value.data);
-					}
 
-				}
-				dialogOpen = false;
-				});
-		}
+	// Dialog handling
+
+	private (LazyIOFlag, string) IODataDispatcher() {
+		return (LazyIOFlag.Save | LazyIOFlag.Scene, ctx.LazyExtras.scene.ExportSceneFile());
+	}
+	private void IODataReceiver(bool success, List<string>? data) {
+		if (!success) return;
+		if (data == null) return;
+
+		// 0: Data, 1: file name, 2: path to directory, 3: directory name
+		ctx.LazyExtras.scene.Import(data[0]);
+
+	}
+	private void DrawImportExportControls() {
+		lui.BtnSave(IODataDispatcher, "WSCENEMGR_Dispathcer", "Save", ctx.LazyExtras.io);
+		ImGui.SameLine();
+		lui.BtnLoad(LazyIOFlag.Load | LazyIOFlag.Scene, IODataReceiver, "WSCENEMGR_Receiver", "Load", ctx.LazyExtras.io);
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"SceneWidget: {s}");
 }

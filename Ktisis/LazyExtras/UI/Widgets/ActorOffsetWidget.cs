@@ -47,26 +47,18 @@ class ActorOffsetWidget :ILazyWidget {
 		this.uis.RefreshScale();
 	}
 	public void Draw() {
-		if(dialogOpen)
-			ctx.LazyExtras.io.DrawDialog();
+		//if(dialogOpen)
+		//	ctx.LazyExtras.io.DrawDialog();
 
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.PeopleGroup, "Actor offsets");
 
 		DrawImportControls();
 		ImGui.SameLine();
-		DrawFileOpenPicker();
-		ImGui.SameLine();
-		DrawExportControls();
+		DrawImportExportControls();
 		ImGui.SameLine();
 		ImGui.Checkbox("Local mode", ref offsetLoadModeLocal);
-		//ImGui.SameLine();
-		//DrawPreviewSelect();
-		//ImGui.NewLine();
-
 		DrawLoadedFileInfo();
-
-		//DrawPreview();
 
 		lui.DrawFooter();
 		ImGui.EndGroup();
@@ -79,97 +71,40 @@ class ActorOffsetWidget :ILazyWidget {
 			}
 		}
 	}
-	private void DrawPreviewSelect() {
-		ImGui.BeginGroup();
-		if(ImGui.RadioButton("Import preview", previewImport == true))
-			previewImport = true;
-		if(ImGui.RadioButton("Export preview", previewImport == false))
-			previewImport = false;
-		ImGui.EndGroup();
-	}
-	private void DrawPreview() {
-		ImGui.Dummy(new(0, uis.Space));
-		if(previewImport) 
-			DrawPreviewTable("Importing:", offsets.Actors);
-		else 
-			DrawPreviewTable("Exporting:", ctx.LazyExtras.actors.aof.Actors);
-	}
-	private void DrawPreviewTable(string tableHeader, List<LazyActorOffsetElement> actors) {
-		ImGui.Text(tableHeader);
-		ImGui.Text("Scene target:");
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(uis.SidebarW/3);
-		ImGui.Text("File target:");
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(2*uis.SidebarW/3);
-
-		ImGui.NewLine();
-		if (actors.Any())
-			foreach (var actor in ctx.LazyExtras.actors.aof.Actors)
-				DrawActorLine(actor.Name, actor.Name, actor.Position);
-	}
-	private void DrawActorLine(string sceneActor, string fileActor, Vector3 actorPos) {
-		ImGui.Text(sceneActor);
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(uis.SidebarW/3);
-		ImGui.Text(fileActor);
-		ImGui.SameLine();
-		ImGui.SetCursorPosX(2*uis.SidebarW/3);
-		ImGui.Text(actorPos.ToString());
-	}
-	private void DrawExportControls() {
-		ImGui.BeginGroup();
-		//if(lui.BtnIcon(FontAwesomeIcon.ArrowsSpin, "WAOFRefreshExport", uis.BtnSmall, "Refresh export"))
-		//	ctx.LazyExtras.actors.UpdateAOF();
-		//ImGui.SameLine();
-		if(lui.BtnIcon(FontAwesomeIcon.Save, "WAOFExportFile", uis.BtnSmall, "Export")) {
-			dialogOpen = true;
-			ctx.LazyExtras.actors.UpdateAOF();
-			ctx.LazyExtras.io.SetSaveBuffer(ctx.LazyExtras.actors.ExportOffsets());
-			ctx.LazyExtras.io.OpenOffsetSaveDialog((valid, res) => {
-				if (valid) {
-					dbg("Success: saving offsets.");
-					//dbg(res);
-				}
-				dialogOpen = false;
-				});
-		}
-		ImGui.EndGroup();
-	}
 	private void DrawLoadedFileInfo() {
-		// show selected file
-		if(loadedOffsetFileName != null) {
-			ImGui.BeginGroup();
-			ImGui.Text(loadedOffsetFileName);
-			//ImGui.Text(loadedOffsetDirFriendly);
-			ImGui.SameLine();
-			ImGui.Text($"Actors: {ctx.LazyExtras.actors.aof.Actors.Count}");
-			ImGui.Text(string.Join(" | ", ctx.LazyExtras.actors.aof.Actors.Select(a => a.Name)));
-			ImGui.EndGroup();
-		}
+		if(loadedOffsetFileName == null) return;
+
+		ImGui.BeginGroup();
+		ImGui.Text(loadedOffsetFileName);
+		ImGui.SameLine();
+		ImGui.Text($"Actors: {ctx.LazyExtras.actors.aof.Actors.Count}");
+		ImGui.Text(string.Join(" | ", ctx.LazyExtras.actors.aof.Actors.Select(a => a.Name)));
+		ImGui.EndGroup();
 	}
-	private void DrawFileOpenPicker() {
-		if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WAOFLoadActorOffsets", uis.BtnSmall, "Load offsets")) {
-			dialogOpen = true;
-			ctx.LazyExtras.io.OpenOffsetDialog((valid, res) => {
-				if (valid) {
-					dbg("Success: reading offsets.");
-					var _ = ctx.LazyExtras.io.ReadFile(res[0]);
 
-					if(_ != null) {
-						offsetsString = _.Value.data;
-						loadedOffsetFileName = _.Value.filename;
-						loadedOffsetPoseDir = _.Value.dir;
-						loadedOffsetDirFriendly = _.Value.dirname;
+	// Dialog handling
 
-						ctx.LazyExtras.actors.ImportOffset(offsetsString);
-						offsets = ctx.LazyExtras.actors.aof;
-					}
+	private (LazyIOFlag, string) IODataDispatcher() {
+		ctx.LazyExtras.actors.UpdateAOF();
+		return (LazyIOFlag.Save | LazyIOFlag.Offset, ctx.LazyExtras.actors.ExportOffsets());
+	}
+	private void IODataReceiver(bool success, List<string>? data) {
+		if(!success) return;
+		if(data == null) return;
 
-				}
-				dialogOpen = false;
-				});
-		}
+		// 0: Data, 1: file name, 2: path to directory, 3: directory name
+		offsetsString = data[0];
+		loadedOffsetFileName = data[1];
+		loadedOffsetPoseDir = data[2];
+		loadedOffsetDirFriendly = data[3];
+
+		ctx.LazyExtras.actors.ImportOffset(offsetsString);
+		offsets = ctx.LazyExtras.actors.aof;
+	}
+	private void DrawImportExportControls() {
+		lui.BtnSave(IODataDispatcher, "WACTOFF_Dispathcer", "Save", ctx.LazyExtras.io);
+		ImGui.SameLine();
+		lui.BtnLoad(LazyIOFlag.Load | LazyIOFlag.Offset, IODataReceiver, "WACTOFF_Receiver", "Load", ctx.LazyExtras.io);
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"ActorOffsetsWidget: {s}");
 }
