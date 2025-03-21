@@ -39,49 +39,72 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			lui.DrawHeader(FontAwesomeIcon.PersonRays, $"Pose utilities: {ctx.LazyExtras.SelectedActor?.Name ?? "No target."}");
 			
 			// TODO selectmanager is not notified if the current selection is deleted.
-			using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null)) {
-
-				ImGui.Text("Gaze control");
-				if (ImGui.Button("Set neutral") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.pose.ResetGaze(ctx.LazyExtras.SelectedActor);
-				ImGui.SameLine();
-				if (ImGui.Button("Camera") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.pose.SetGazeAtCurrentCamera(ctx.LazyExtras.SelectedActor);
-				ImGui.SameLine();
-				if (ImGui.Button("Set target") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.pose.SetWorldGazeTarget();
-				ImGui.SameLine();
-				if (ImGui.Button("Look at") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.pose.SetGazeAtWorldTarget(ctx.LazyExtras.SelectedActor);
-				ImGui.SameLine();
-				ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
-
-				if(lui.BtnIcon(FontAwesomeIcon.Recycle, "WDG_Pose_ResetFocalPoint", uis.BtnSmaller, "Reset"))
-					ctx.LazyExtras.pose.GazeFocalPointScalar = 0.0f;
-				ImGui.SameLine();
-				using (ImRaii.ItemWidth(uis.SidebarW/3)) {
-				ImGui.DragFloat("Gaze focal depth", ref ctx.LazyExtras.pose.GazeFocalPointScalar, 0.001f, -0.5f, 0.5f);
-				}
-
-				ImGui.Text("Bone overlay");
-				if (ImGui.Button("Gesture bones") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.overlay.ToggleGestureBones(ctx.LazyExtras.SelectedActor);
-
-				ImGui.SameLine();
-				if (ImGui.Button("Details") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.overlay.ToggleGestureDetailBones(ctx.LazyExtras.SelectedActor!);
-				ImGui.SameLine();
-				if (ImGui.Button("Hide all") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.overlay.HideAllBones();
+			using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null))
+			{
+				DrawGazeBasicControls();
 				ImGui.Spacing();
-				ImGui.Text("Misc");
-				if (ImGui.Button("Set expression export pose") && ctx.LazyExtras.SelectedActor != null)
-					ctx.LazyExtras.pose.SetPartialReference();
+				DrawGazeTargetControls();
+				ImGui.Spacing();
+				DrawOverlayControls();
+				ImGui.Spacing();
+
+				// TODO move this somewhere else
+				//ImGui.Text("Misc");
+				//if (ImGui.Button("Set reference pose") && ctx.LazyExtras.SelectedActor != null)
+				//	ctx.LazyExtras.pose.SetPartialReference();
 
 			}
 
 			lui.DrawFooter();
 			ImGui.EndGroup();
 		}
-    }
+
+		private void DrawOverlayControls() {
+			ImGui.Text("Bone overlay");
+			if (lui.BtnIcon(FontAwesomeIcon.PersonFalling, "WDG_PoseGestureOverlay", uis.BtnSmall, "Gesture overlay"))
+				ctx.LazyExtras.overlay.ToggleGestureBones(ctx.LazyExtras.SelectedActor!);
+
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.Plus, "WDG_PoseGestureOverlayExtra", uis.BtnSmall, "Gesture details"))
+				ctx.LazyExtras.overlay.ToggleGestureDetailBones(ctx.LazyExtras.SelectedActor!);
+
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.HandHolding, "WDG_PoseGestureOverlayHands", uis.BtnSmall, "Gesture details"))
+				ctx.LazyExtras.overlay.ToggleHandBones(ctx.LazyExtras.SelectedActor!);
+
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.UserSlash, "WDG_PoseGestureOverlayHideAll", uis.BtnSmall, "Hide overlay"))
+				ctx.LazyExtras.overlay.HideAllBones();
+		}
+
+		private void DrawGazeBasicControls() {
+			ImGui.Text("Gaze control");
+			if (lui.BtnIcon(FontAwesomeIcon.EyeSlash, "WDG_PoseSetNeutral", uis.BtnSmall, "Neutral gaze"))
+				ctx.LazyExtras.pose.ResetGaze(ctx.LazyExtras.SelectedActor!);
+
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.Eye, "WDG_PoseSetGazeToCam", uis.BtnSmall, "Look at camera"))
+				ctx.LazyExtras.pose.SetGazeAtCurrentCamera(ctx.LazyExtras.SelectedActor!);
+
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.Recycle, "WDG_Pose_ResetFocalPoint", uis.BtnSmaller, "Reset"))
+				ctx.LazyExtras.pose.GazeFocalPointScalar = 0.0f;
+
+			ImGui.SameLine();
+			using (ImRaii.ItemWidth(uis.SidebarW/3))
+			{
+				ImGui.DragFloat("Focal depth", ref ctx.LazyExtras.pose.GazeFocalPointScalar, 0.001f, -0.5f, 0.5f);
+			}
+		}
+
+		private void DrawGazeTargetControls() {
+			if (lui.BtnIcon(FontAwesomeIcon.EyeDropper, "WDG_PoseSetGazeTarget", uis.BtnSmall, "Set gaze target"))
+				ctx.LazyExtras.pose.SetWorldGazeTarget();
+			ImGui.SameLine();
+			if (lui.BtnIcon(FontAwesomeIcon.Bullseye, "WDG_PoseSetGazeToTarget", uis.BtnSmall, "Gaze at target"))
+				ctx.LazyExtras.pose.SetGazeAtWorldTarget(ctx.LazyExtras.SelectedActor!);
+			ImGui.SameLine();
+			ImGui.Text(ctx.LazyExtras.pose.TargetLookPosition.ToString());
+		}
+	}
 }
