@@ -38,7 +38,7 @@ public class LazyPoseLerp {
 	
 	public float lerpFactor = 0.0f;
 
-	//private Dictionary<string, xfmBLF> TargetBlacklist { get; set; }
+	private Dictionary<string, Dictionary<string, float>> faceFilters = [];
 
 	public LazyPoseLerp(IEditorContext ctx) { 
 		this.ctx = ctx;
@@ -46,16 +46,39 @@ public class LazyPoseLerp {
 		wtd_origin = new WorldTransformData();
 		wtd_target = new WorldTransformData();
 	}
-	
 	public void SetupLerp(ActorEntity? ae, string poseDataJson) {
 		if(ae == null) return;
 		if(ae.Pose == null) return;
-		actor = ae;
 
+		BuildFilterDicts();
+
+		actor = ae;
 
 		JsonFileSerializer jfs = new();
 		if(jfs.Deserialize<PoseFile>(poseDataJson) is not PoseFile pf) return;
 		if(pf.Bones == null) return;
+
+		/*
+		 
+		The following is a workaround to calculate a target pose for lerping.
+
+		Ideally, this would be done by loading the target into memory, and:
+			1.	Calculate matricies for w2l and l2w for both the origin and the target
+				based on an anchor bone, in whose local space the bones to LERP can be 
+				accurately positioned.
+			2.	Transform the target to origin using it's own l2w: position, then rotation.
+				At this point, the anchor bone should be at pos 0,0,0 with an identity 
+				quaternion for orientation.
+			3.	Transform the target to origin world space, using origins w2l: rotation,
+				then position.
+
+		This would shift the target pose into world space, with the anchor bone of
+		both origin and target in the same position and orientation. From there, 
+		lerping between the two without further transformations is possible. 
+
+		I may revisit this later, though that would mean interacting directly with HavokPosing.cs
+		 
+		 */
 
 		epc = new EntityPoseConverter(ae.Pose);
 		origin = epc.Save();
@@ -103,12 +126,16 @@ public class LazyPoseLerp {
 	public void Slide() {
 		if(!CanLerp()) return;
 
+		float boneLerpFactor = 1.0f;
 		foreach(var trg in lerpTargets) {
-			if (between!.ContainsKey(trg) && origin!.ContainsKey(trg)) {
-				between[trg].Rotation = Quaternion.Slerp(origin![trg].Rotation, target![trg].Rotation, lerpFactor);
-				between[trg].Position = Vector3.Lerp(origin[trg].Position, target![trg].Position, lerpFactor);
-				between[trg].Scale = Vector3.Lerp(origin[trg].Scale, target![trg].Scale, lerpFactor);
-			} 
+			if (!(between!.ContainsKey(trg) && origin!.ContainsKey(trg)))
+				continue;
+			
+			boneLerpFactor = CheckFilter(trg);
+
+			between[trg].Rotation	= Quaternion.Slerp(origin![trg].Rotation, target![trg].Rotation, boneLerpFactor);
+			between[trg].Position	= Vector3.Lerp(origin[trg].Position, target![trg].Position, boneLerpFactor);
+			between[trg].Scale		= Vector3.Lerp(origin[trg].Scale, target![trg].Scale, boneLerpFactor);
 		}
 
 		epc!.Load(between!, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
@@ -122,6 +149,85 @@ public class LazyPoseLerp {
 		if(epc == null)				return false;
 		if(lerpTargets.Count == 0)	return false;
 		return true;
+	}
+	public float CheckFilter(string bone) {
+		foreach(var d in faceFilters)
+			if(d.Value.TryGetValue(bone, out float val))
+				return val > 0.0f ? val : lerpFactor;
+		return lerpFactor;
+	}
+	public void SetFilterGroupValue(string group, float val) {
+		if(faceFilters.TryGetValue(group, out var dict))
+			foreach(var x in dict.Keys.ToList())
+				dict[x] = val;	
+	}
+	private void BuildFilterDicts() {
+		Dictionary<string, float> fDictHair		= [];
+		Dictionary<string, float> fDictEars		= [];
+		Dictionary<string, float> fDictEyes		= [];
+		Dictionary<string, float> fDictLids		= [];
+		Dictionary<string, float> fDictBrow		= [];
+		Dictionary<string, float> fDictCheek	= [];
+		Dictionary<string, float> fDictMouth	= [];
+		Dictionary<string, float> fDictTongue	= [];
+		faceFilters.Clear();
+
+		foreach(var b in headBones) {
+			string m7 = b.Length >= 7 ? b[..7] : b;
+			string m6 = b.Length >= 6 ? m7[..6] : b;
+			string m5 = b.Length >= 5 ? m6[..5] : b;
+			string m4 = b.Length >= 4 ? m5[..4] : b;
+
+			if		(IsTongue(m7))		fDictTongue.Add(b, 0.0f);
+			else if (IsHair(m4, m6))	fDictHair.Add(b, 0.0f);
+			else if (IsEars(m4, m6))	fDictEars.Add(b, 0.0f);
+			else if (IsEyes(m6, m7))	fDictEyes.Add(b, 0.0f);
+			else if (IsBrow(m6, m7))	fDictBrow.Add(b, 0.0f);	
+			else if (IsLids(m7))		fDictLids.Add(b, 0.0f);
+			else if (IsCheek(m6, m7))	fDictCheek.Add(b, 0.0f);	
+			else if (IsMouth(m5, m7))	fDictMouth.Add(b, 0.0f);
+		}
+
+		faceFilters.Add("Tongue", fDictTongue);
+		faceFilters.Add("Hair", fDictHair);
+		faceFilters.Add("Ears", fDictEars);
+		faceFilters.Add("Eyes", fDictEyes);
+		faceFilters.Add("Brow", fDictBrow);
+		faceFilters.Add("Lids", fDictLids);
+		faceFilters.Add("Cheeks", fDictCheek);
+		faceFilters.Add("Mouth", fDictMouth);
+
+		//int i = 0;
+		//foreach(var d in faceFilters)
+		//{
+		//	foreach(var f in d.Value)
+		//	{
+		//		dbg($"{f.Key} -> {f.Value}");
+		//		i++;
+		//	}
+		//}
+		//dbg($"Filtering: {i}/{headBones.Count}");
+
+		bool IsHair(string m4, string m6) 
+			=> (m4 == "j_ex"	|| m6 == "j_kami");
+		bool IsEars(string m4, string m6)
+			=> (m6 == "j_mimi"	|| m6 == "j_zera"	|| m4 == "j_ea");
+		bool IsEyes(string m6, string m7)
+			=> (m6 == "j_f_ey"	|| m6 == "j_f_ir"	|| m6 == "j_f_no");
+		bool IsLids(string m7)
+			=> (m7 == "j_f_uma"	|| m7 == "j_f_mab"	|| m7 == "j_f_dma");
+		bool IsBrow(string m6, string m7)
+			=> (m6 == "j_f_mi"	|| m7 == "j_f_may"	|| m6 == "j_f_mm");
+		bool IsCheek(string m6, string m7)
+			=> (m6 == "j_f_ho"	|| m7 == "j_f_dho"	|| m7 == "j_f_sho" ||
+				m7 == "j_f_dme");
+		bool IsMouth(string m5, string m7)
+			=> (m7 == "j_f_ago"	|| m7 == "j_f_dag"	|| m7 == "j_f_hag" || 
+				m7 == "j_f_dli" || m7 == "j_f_dml"	|| m7 == "j_f_dsl" ||
+				m7 == "j_f_uli" || m7 == "j_f_uml"	|| m7 == "j_f_usl" ||
+				m5 == "j_ago");
+		bool IsTongue(string m7)
+			=> (m7 == "j_f_ber");
 	}
 
 	// don't look

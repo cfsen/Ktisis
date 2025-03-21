@@ -21,6 +21,13 @@ class PoseLerpWidget :ILazyWidget {
 	private LazyUi lui;
 	private LazyUiSizes uis;
 	private bool lerpEnabled = false;
+	private float sliderBufferMouth = 0.0f;
+	private float sliderBufferTongue = 0.0f;
+	private float sliderBufferCheeks = 0.0f;
+	private float sliderBufferLids = 0.0f;
+	private float sliderBufferEyes = 0.0f;
+	private float sliderBufferBrow = 0.0f;
+	private float sliderBufferHair = 0.0f;
 
 	public PoseLerpWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.Pose;
@@ -50,12 +57,36 @@ class PoseLerpWidget :ILazyWidget {
 			ctx.LazyExtras.pose.lerp.ToggleLerp();
 
 		using(ImRaii.Disabled(ctx.LazyExtras.SelectedActor == null || !lerpEnabled)) {
-			if(ImGui.SliderFloat("LERP", ref ctx.LazyExtras.pose.lerp.lerpFactor, 0.0f, 1.0f))
+		ImGui.SetCursorPosX(uis.SidebarW/3);
+			ImGui.Text("Full LERP");
+			ImGui.Text("Origin");
+			ImGui.SameLine();
+			if(ImGui.SliderFloat("Target##WPOSELERP_FullLerp", ref ctx.LazyExtras.pose.lerp.lerpFactor, 0.0f, 1.0f))
 				ctx.LazyExtras.pose.lerp.Slide();
+			
+			LerpSlider("Hair", ref sliderBufferHair);
+			LerpSlider("Brow", ref sliderBufferBrow);
+			LerpSlider("Eyes", ref sliderBufferEyes);
+			LerpSlider("Lids", ref sliderBufferLids);
+			LerpSlider("Cheeks", ref sliderBufferCheeks);
+			LerpSlider("Mouth", ref sliderBufferMouth);
+			LerpSlider("Tongue", ref sliderBufferTongue);
+
 		}
 
 		lui.DrawFooter();
 		ImGui.EndGroup();
+	}
+
+	private void LerpSlider(string label, ref float sliderBuffer) {
+		ImGui.SetCursorPosX(uis.SidebarW/3);
+		ImGui.Text(label);
+		ImGui.Text("Origin");
+		ImGui.SameLine();
+		if(ImGui.SliderFloat($"Target##WPOSELERP_FullLerp{label}", ref sliderBuffer, 0.0f, 1.0f)) {
+			ctx.LazyExtras.pose.lerp.SetFilterGroupValue(label, sliderBuffer);
+			ctx.LazyExtras.pose.lerp.Slide();
+		}
 	}
 
 	// Saving & loading
@@ -68,6 +99,7 @@ class PoseLerpWidget :ILazyWidget {
 		if (data == null) return;
 		// 0: Data, 1: file name, 2: path to directory, 3: directory name
 		ctx.LazyExtras.pose.lerp.SetupLerp(ctx.LazyExtras.SelectedActor, data[0]);
+		sliderBufferMouth = 0.0f;
 	}
 	private void DrawImportExportControls() {
 		//lui.BtnSave(IODataDispatcher, "WPOSELERP_Dispathcer", "Save", ctx.LazyExtras.io);
