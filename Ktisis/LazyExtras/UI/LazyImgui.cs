@@ -79,6 +79,7 @@ public class LazyImgui : KtisisWindow {
 			new PoseFaceWidget(ctx, tex),
 			new PoseLerpWidget(ctx),
 			new PoseWidget(ctx),
+			new FastIKWidget(ctx),
 			new LightsWidget(ctx),
 			new CameraWidget(ctx),
 			new TransformWidget(ctx),
