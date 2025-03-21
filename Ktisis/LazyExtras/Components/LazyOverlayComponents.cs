@@ -50,6 +50,22 @@ public class LazyOverlayComponents {
 		this.ToggleBones(selected, bones);
 	}
 
+	public void ToggleHandBones(ActorEntity selected) {
+		var bones = new List<string>() { 
+			"Left Hand", "Left Wrist", "Left Thumb A", "Left Thumb B",
+			"Left Index A", "Left Pinky A", "Left Ring A", "Left Middle A",
+			"Left Index B", "Left Pinky B", "Left Ring B", "Left Middle B",
+			"Pinky Left C", "Ring Left C", "Middle Left C", "Index Left C",
+			
+			"Right Hand", "Right Wrist", "Right Thumb A", "Right Thumb B",
+			"Right Index A", "Right Pinky A", "Right Ring A", "Right Middle A",
+			"Right Index B", "Right Pinky B", "Right Ring B", "Right Middle B",
+			"Pinky Right C", "Ring Right C", "Middle Right C", "Index Right C",
+			};
+
+		this.ToggleBones(selected, bones);
+	}
+
 	/// <summary>
 	/// Toggles the overlay visibility of bones in supplied list 
 	/// </summary>
