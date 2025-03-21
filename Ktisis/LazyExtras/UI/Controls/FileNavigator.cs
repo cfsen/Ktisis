@@ -80,7 +80,7 @@ class FileNavigator {
 		else
 			idx = check_idx;
 
-		dbg($"Index changed: {Cursor} -> {idx}");
+		//dbg($"Index changed: {Cursor} -> {idx}");
 		Cursor = idx;
 
 		FilePath = Files[Cursor].Item1;
@@ -89,12 +89,12 @@ class FileNavigator {
 	}
 
 	private void PopulateFileList(string path) {
-		dbg("PopulateFileList");
+		//dbg("PopulateFileList");
 		var files = io.ScanDir(path, Filter);
-		dbg($"ScanDir: {path}\r\t\t\t\t\t\tCount={files.Length}");
+		//dbg($"ScanDir: {path}\r\t\t\t\t\t\tCount={files.Length}");
 		if(files.Length == 0) return;
 		foreach(string s in files) {
-			dbg($"\tAdd: {s}");
+			//dbg($"\tAdd: {s}");
 			Files.Add((s, io.GetFriendlyName(s)));
 		}
 		FileCount = files.Length;
@@ -106,7 +106,7 @@ class FileNavigator {
 				break;
 			}
 		}
-		dbg($"Cursor set to idx: {Cursor}");
+		//dbg($"Cursor set to idx: {Cursor}");
 	}
 	private void Reset() {
 		Files.Clear();
