@@ -1,4 +1,6 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
+
 using ImGuiNET;
 
 using Ktisis.Editor.Context.Types;
@@ -45,6 +47,13 @@ class SceneWidget :ILazyWidget {
 		ImGui.EndGroup();
 	}
 
+	public void DrawAsInline() {
+		ImGui.SameLine();
+		using (ImRaii.Group()) {
+			DrawImportExportControls();
+		}
+	}
+
 	// Dialog handling
 
 	private (LazyIOFlag, string) IODataDispatcher() {
@@ -59,9 +68,11 @@ class SceneWidget :ILazyWidget {
 
 	}
 	private void DrawImportExportControls() {
+		using (ImRaii.Disabled(!ctx.Posing.IsEnabled)) {
 		lui.BtnSave(IODataDispatcher, "WSCENEMGR_Dispathcer", "Save", ctx.LazyExtras.io);
 		ImGui.SameLine();
 		lui.BtnLoad(LazyIOFlag.Load | LazyIOFlag.Scene, IODataReceiver, "WSCENEMGR_Receiver", "Load", ctx.LazyExtras.io);
+		}
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"SceneWidget: {s}");
 }

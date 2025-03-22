@@ -43,8 +43,10 @@ public class LazyImgui : KtisisWindow {
 	private Vector2 UiPosition;
 	private Vector2 UiSize;
 	private LazyUiSizes uis;
-	private List<ILazyWidget> Widgets;
 
+	internal SceneWidget WidgetSceneLoader { get; private set; }
+
+	private List<ILazyWidget> Widgets;
 	private LazyWidgetCat widgetFilter;
 
 	public LazyImgui(IEditorContext ctx, ITextureProvider tex) 
@@ -62,7 +64,8 @@ public class LazyImgui : KtisisWindow {
 		this.Initialize();
 		this.SetShowUi();
 		
-		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light ^ LazyWidgetCat.Camera ^ LazyWidgetCat.Misc;
+		this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ LazyWidgetCat.Light 
+			^ LazyWidgetCat.Camera ^ LazyWidgetCat.Scene ^ LazyWidgetCat.Misc;
 		//this.widgetFilter = LazyWidgetCat.Transformers ^ LazyWidgetCat.Pose ^ 
 		//	LazyWidgetCat.Light ^ LazyWidgetCat.Camera ^ LazyWidgetCat.Misc ^ LazyWidgetCat.Gesture ^
 		//	LazyWidgetCat.Scene;
@@ -71,9 +74,11 @@ public class LazyImgui : KtisisWindow {
 	// Initialize widgets
 
 	private void Initialize() {
+		this.WidgetSceneLoader = new SceneWidget(ctx);
 		this.Widgets = [
 			//new DbgWidget(ctx),
-			new SceneWidget(ctx),
+			//new SceneWidget(ctx),
+			this.WidgetSceneLoader,
 			new PenumbraWidget(ctx),
 			new ActorOffsetWidget(ctx),
 			new PoseFaceWidget(ctx, tex),
@@ -192,13 +197,14 @@ public class LazyImgui : KtisisWindow {
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
 			this.ctx.Interface.ToggleConfigWindow();
 
-		ImGui.SameLine();
-		if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
-			dbg("Increase ui scaling");
+		this.WidgetSceneLoader.DrawAsInline();
+		//ImGui.SameLine();
+		//if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
+		//	dbg("Increase ui scaling");
 
-		ImGui.SameLine();
-		if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
-			dbg("decrease ui scaling");
+		//ImGui.SameLine();
+		//if (lui.BtnIcon(FontAwesomeIcon.SearchMinus, "DecreaseUiScaling", uis.BtnSmall, "Decrease UI scale"))
+		//	dbg("decrease ui scaling");
 
 		ImGui.SameLine();
 		if (lui.BtnIcon(FontAwesomeIcon.Undo, "Undo", uis.BtnSmall, "Undo"))
