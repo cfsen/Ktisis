@@ -61,7 +61,7 @@ class NodeSelectWidget :ILazyWidget {
 		lui.DrawHeader(FontAwesomeIcon.AddressBook, "Entity tree");
 		DrawTreeButtons();
 		this.Draw(500.0f);
-		DrawFilterControl();
+		//DrawFilterControl();
 		lui.DrawFooter();
 		ImGui.EndGroup();
 	}
@@ -87,10 +87,19 @@ class NodeSelectWidget :ILazyWidget {
 		if(lui.BtnIcon(FontAwesomeIcon.Lightbulb, "WNodeTreeSpawnLight", uis.BtnSmall, "Spawn light"))
 			 this._ctx.Scene.Factory.CreateLight(Structs.Lights.LightType.SpotLight).Spawn();
 		ImGui.SameLine();
+		ImGui.EndGroup();
 
-		ImGui.SetCursorPosX(uis.SidebarW/2);
+		ImGui.SameLine();
+
+		ImGui.BeginGroup();
+		DrawFilterControl();
+		ImGui.EndGroup();
+
+		ImGui.SameLine();
+		ImGui.SetCursorPosX(uis.SidebarW-3*uis.BtnSmall.X);
+
+		ImGui.BeginGroup();
 		DrawTreeActorButtons();
-
 		ImGui.Dummy(new(0,uis.Space));
 		ImGui.EndGroup();
 	}
@@ -98,9 +107,6 @@ class NodeSelectWidget :ILazyWidget {
 	private void DrawTreeActorButtons() {
 		if(_ctx.LazyExtras.SelectedActor is not ActorEntity ae) return;
 		using (ImRaii.Disabled(_ctx.LazyExtras.SelectedActor == null || !_ctx.Posing.IsEnabled)) {
-			//if(lui.BtnIcon(FontAwesomeIcon.FolderOpen, "WNodeTreeLoadPose", uis.BtnSmall, "Load pose"))
-			//	_ctx.Interface.OpenPoseImport(ae);	// TODO glib dependency
-			//ImGui.SameLine();
 			if(lui.BtnIcon(FontAwesomeIcon.Save, "WNodeTreeSavePose", uis.BtnSmall, "Save pose"))
 				ExportPose(ae.Pose);		// TODO
 		}
