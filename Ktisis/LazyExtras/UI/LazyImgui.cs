@@ -44,7 +44,7 @@ public class LazyImgui : KtisisWindow {
 	private Vector2 UiSize;
 	private LazyUiSizes uis;
 
-	internal SceneWidget WidgetSceneLoader { get; private set; }
+	internal SceneWidget? WidgetSceneLoader { get; private set; }
 
 	private List<ILazyWidget> Widgets;
 	private LazyWidgetCat widgetFilter;
@@ -78,7 +78,6 @@ public class LazyImgui : KtisisWindow {
 		this.Widgets = [
 			//new DbgWidget(ctx),
 			//new SceneWidget(ctx),
-			this.WidgetSceneLoader,
 			new PenumbraWidget(ctx),
 			new ActorOffsetWidget(ctx),
 			new PoseFaceWidget(ctx, tex),
@@ -90,6 +89,7 @@ public class LazyImgui : KtisisWindow {
 			new TransformWidget(ctx),
 			new PoseLoadWidget(ctx),
 			new NodeSelectWidget(ctx),
+			this.WidgetSceneLoader,
 			new WindowsWidget(ctx)
 			];
 	}
@@ -197,7 +197,8 @@ public class LazyImgui : KtisisWindow {
 		if (lui.BtnIcon(FontAwesomeIcon.Cog, "Settings", uis.BtnSmall, "Settings"))
 			this.ctx.Interface.ToggleConfigWindow();
 
-		this.WidgetSceneLoader.DrawAsInline();
+		if(this.WidgetSceneLoader != null)
+			this.WidgetSceneLoader.DrawAsInline();
 		//ImGui.SameLine();
 		//if (lui.BtnIcon(FontAwesomeIcon.SearchPlus, "IncreaseUiScaling", uis.BtnSmall, "Increase UI scale"))
 		//	dbg("Increase ui scaling");
