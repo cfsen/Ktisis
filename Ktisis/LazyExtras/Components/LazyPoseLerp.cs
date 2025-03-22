@@ -158,7 +158,7 @@ public class LazyPoseLerp {
 	}
 	public void SetFilterGroupValue(string group, float val) {
 		if(faceFilters.TryGetValue(group, out var dict))
-			foreach(var x in dict.Keys.ToList())
+			foreach(var x in dict.Keys) 
 				dict[x] = val;	
 	}
 	private void BuildFilterDicts() {
