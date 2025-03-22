@@ -71,21 +71,28 @@ class FastIKWidget :ILazyWidget {
 		}
 	}
 	private void DrawIKNodeSwitch(IIkNodeState node) {
+		using(ImRaii.Group()){
+
 		if(ImGui.Checkbox(node.Name, ref node.Enabled))
 			IkToggleHandle((IIkNode)node.SceneEntity);
+
+		if(!(node.Enabled && node.SceneEntity is ITwoJointsNode tjn))
+			return;
+
+		ImGui.Checkbox("Lock rotation", ref tjn.Group.EnforceRotation);
+		}
 	}
 	private void IkToggleHandle(IIkNode se) {
 		if(se is ICcdNode cn) {
 			// TODO
 		}
-		if (se is ITwoJointsNode tn) {
-			tn.Group.EnforceRotation = false;
-		}
+		//if (se is ITwoJointsNode tn) {
+		//	tn.Group.EnforceRotation = false;
+		//}
 		if(se.IsEnabled)
 			se.Disable();
 		else 
 			se.Enable();
-		dbg($"se.IsEnabled: {se.IsEnabled}");
 	}
 	private void ActorCheck() {
 		if(ctx.LazyExtras.SelectedActor == null) return;
