@@ -10,6 +10,7 @@ using Ktisis.Scene.Entities;
 using Ktisis.Scene.Entities.Game;
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Numerics;
 
@@ -61,7 +62,7 @@ class FastIKWidget :ILazyWidget {
 			ImGui.BeginTable("iktable", 2);
 
 			foreach(var node in nodeStates) {
-				if(node.SceneEntity is not ITwoJointsNode)
+				if(node.SceneEntity is not (ITwoJointsNode or ICcdNode))
 					continue;
 				ImGui.TableNextColumn();
 				DrawIKNodeSwitch(node);
@@ -71,24 +72,25 @@ class FastIKWidget :ILazyWidget {
 		}
 	}
 	private void DrawIKNodeSwitch(IIkNodeState node) {
-		using(ImRaii.Group()){
+		ImGui.BeginGroup();
 
-		if(ImGui.Checkbox(node.Name, ref node.Enabled))
+		ImGui.BeginDisabled(!ctx.Posing.IsEnabled);
+		if(ImGui.Checkbox($"{node.Name}##WFASTIK_Enable{node.Name}", ref node.Enabled))
 			IkToggleHandle((IIkNode)node.SceneEntity);
+		ImGui.EndDisabled();
 
-		if(!(node.Enabled && node.SceneEntity is ITwoJointsNode tjn))
-			return;
+		ImGui.BeginDisabled(!node.Enabled);
+		if(node.SceneEntity is ITwoJointsNode tjn) 
+			ImGui.Checkbox($"Lock rotation##WFASTIK_RotLock{node.Name}", ref tjn.Group.EnforceRotation);
+		ImGui.EndDisabled();
 
-		ImGui.Checkbox("Lock rotation", ref tjn.Group.EnforceRotation);
+		if(node.SceneEntity is ICcdNode ccd) {
+			ImGui.Dummy(new (0, ImGui.GetFontSize()));
 		}
+
+		ImGui.EndGroup();
 	}
 	private void IkToggleHandle(IIkNode se) {
-		if(se is ICcdNode cn) {
-			// TODO
-		}
-		//if (se is ITwoJointsNode tn) {
-		//	tn.Group.EnforceRotation = false;
-		//}
 		if(se.IsEnabled)
 			se.Disable();
 		else 
@@ -110,9 +112,10 @@ class FastIKWidget :ILazyWidget {
 
 			if(ent is not IIkNode ikn)
 				continue;
-			// TODO follow plugin settings for filtering
-			//if("IVPT".Contains(ent.Name[0]))
-			//	continue;
+			// TODO look for the flag
+			if(!ctx.Config.Categories.ShowNsfwBones && "IVP".Contains(ent.Name[0]))
+				continue;
+
 
 			nodeStates.Add(new IIkNodeState {
 				Name = ent.Name,
