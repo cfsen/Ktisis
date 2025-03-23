@@ -241,6 +241,29 @@ public class LightWindow : EntityEditWindow<LightEntity> {
 		ImGui.Spacing();
 		ImGui.DragFloat("Shadow Near", ref light->ShadowNear, 0.01f, 0.0f, 1000.0f);
 		ImGui.DragFloat("Shadow Far", ref light->ShadowFar, 0.01f, 0.0f, 1000.0f);
+		//ImGui.DragFloat("_unk0##TESTING_LIGHT_unk0", ref light->_unk0, 0.01f, -10000.0f, 10000.0f);
+		//ImGui.DragFloat("_unkVec0.X##TESTING_LIGHT_unkvec0x", ref light->_unkVec0.X, 0.01f, -10000.0f, 10000.0f);
+		//ImGui.DragFloat("_unkVec0.Y##TESTING_LIGHT_unkvec0y", ref light->_unkVec0.Y, 0.01f, -10000.0f, 10000.0f);
+
+		// These seem to control light culling
+		// Cutoff range negative X axis
+		ImGui.DragFloat("Culling -X##TESTING_LIGHT_unk0vec0z", ref light->_unkVec0.Z, 0.01f, -10000.0f, 10000.0f);
+		// Cutoff range negative Y axis
+		ImGui.DragFloat("Culling -Y##TESTING_LIGHT_unkvec1x", ref light->_unkVec1.X, 0.01f, -10000.0f, 10000.0f);
+		// Cutoff range negative Z axis
+		ImGui.DragFloat("Culling -Z##TESTING_LIGHT_unkvec1y", ref light->_unkVec1.Y, 0.01f, -10000.0f, 10000.0f);
+
+		// still unknown
+		//ImGui.DragFloat("_unkVec1.Z##TESTING_LIGHT_unk0vec1z", ref light->_unkVec1.Z, 0.01f, -10000.0f, 10000.0f);
+
+		// Cutoff range positive X axis
+		ImGui.DragFloat("Culling +X##TESTING_LIGHT_unkvec2x", ref light->_unkVec2.X, 0.01f, -10000.0f, 10000.0f);
+		// Cutoff range positive Y axis
+		ImGui.DragFloat("Culling +Y##TESTING_LIGHT_unkvec2y", ref light->_unkVec2.Y, 0.01f, -10000.0f, 10000.0f);
+		// Cutoff range positive Z axis
+		ImGui.DragFloat("Culling +Z##TESTING_LIGHT_unk0vec2z", ref light->_unkVec2.Z, 0.01f, -10000.0f, 10000.0f);
+
+		//ImGui.DragFloat("_unkVec2.W##TESTING_LIGHT_unk0vec2w", ref light->_unkVec2.W, 0.01f, -10000.0f, 10000.0f);
 	}
 	
 	// Utility
