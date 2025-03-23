@@ -28,7 +28,17 @@ public enum FalloffType : uint {
 	Quadratic = 1,
 	Cubic = 2
 }
+/*
+ Notes on _unkVec0, 1, 2
+	-	Seems like it should be two Vector3-like values.
+	-	Controls light culling, allowing you to make a light-box from a point 
+		light, a square light from from a spotlight, etc.
 
+	Structure:
+	CullingPositive = [_unkVec0.Z, _unkVec1.X, _unkVec1.Y] : Culls lights on the negative axis.
+	CullingNegative = [_inkVec2.X, _unkVec2.Y, _unkVec2.Z] : Culls lights on the positive axis.
+
+ */
 [StructLayout(LayoutKind.Explicit, Size = 0xA0)]
 public struct RenderLight {
 	[FieldOffset(0x18)] public LightFlags Flags;
