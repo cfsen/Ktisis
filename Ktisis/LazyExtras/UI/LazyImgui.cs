@@ -37,7 +37,7 @@ public class LazyImgui : KtisisWindow {
 	private LazyUi lui;
 	private Vector2 ScreenDimensions;
 
-	private bool Pinned = true;
+	//private bool Pinned = true;
 	private bool Hidden = false;
 
 	private Vector2 UiPosition;

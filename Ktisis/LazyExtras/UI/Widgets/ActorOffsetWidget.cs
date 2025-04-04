@@ -23,13 +23,13 @@ class ActorOffsetWidget :ILazyWidget {
 	private LazyUi lui;
 	private LazyUiSizes uis;
 
-	private bool dialogOpen = false;
+	//private bool dialogOpen = false;
 	private LazyActorOffsetFile offsets;
 	private string? offsetsString;
 	private string? loadedOffsetFileName;
 	private string? loadedOffsetPoseDir;
 	private string? loadedOffsetDirFriendly;
-	private bool previewImport = true;
+	//private bool previewImport = true;
 	private bool offsetLoadModeLocal = true;
 
 	public ActorOffsetWidget(IEditorContext ctx) {

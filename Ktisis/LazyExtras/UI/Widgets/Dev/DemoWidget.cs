@@ -18,7 +18,6 @@ class DemoWidget :ILazyWidget {
 	private IEditorContext ctx;
 	private LazyUi lui;
 	private LazyUiSizes uis;
-	private bool dialogOpen;
 
 	public DemoWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.None;
