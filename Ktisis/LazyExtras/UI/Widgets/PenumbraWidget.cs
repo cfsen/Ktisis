@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Ktisis.LazyExtras.UI.Widgets;
 class PenumbraWidget :ILazyWidget {
@@ -75,7 +76,7 @@ class PenumbraWidget :ILazyWidget {
 			ImGui.TableSetColumnIndex(i % 3);
 
 			if(lui.BtnIcon(FontAwesomeIcon.Plus, $"WPNB_SpawnAct_LineNo{i}", uis.BtnSmaller, "Spawn")) {
-				ctx.LazyExtras.fw.RunOnTick(() => ipc.SpawnFavorite(fav) );
+				_ = ipc.SpawnFavorite(fav);
 			}
 
 			ImGui.SameLine();

@@ -184,6 +184,11 @@ public class PosingManager : IPosingManager {
 				var restored = converter.GetSelectedBones(false).ToList();
 				converter.LoadBones(initial, restored, PoseTransforms.Position);
 				
+				Ktisis.Log.Debug("Restoring position for:");
+				foreach(var childBone in restored.ToList()) {
+					Ktisis.Log.Debug(childBone.Name);
+				}
+
 				if (anchorGroupsRotate) {
 					// Look for children of anchored bones to restore their rotation
 					var allBones = converter.GetSelectedBones(true).ToList();
@@ -194,6 +199,10 @@ public class PosingManager : IPosingManager {
 								restored.Add(childBone);
 					}
 
+					Ktisis.Log.Debug("Restoring rotation for:");
+					foreach(var childBone in restored.ToList()) {
+						Ktisis.Log.Debug(childBone.Name);
+					}
 					converter.LoadBones(initial, restored, PoseTransforms.Rotation);
 				}
 

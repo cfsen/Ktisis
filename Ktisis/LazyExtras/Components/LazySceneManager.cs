@@ -3,6 +3,7 @@ using Ktisis.Editor.Posing.Data;
 using Ktisis.LazyExtras.Components;
 using Ktisis.LazyExtras.Datastructures;
 using Ktisis.LazyExtras.UI.Widgets;
+using Ktisis.Scene.Decor;
 using Ktisis.Scene.Entities.Game;
 using Ktisis.Scene.Entities.Skeleton;
 using Ktisis.Scene.Modules;
@@ -46,6 +47,10 @@ public class LazySceneManager {
 			return;
 		}
 
+		if(!ctx.Plugin.Ipc.IsPenumbraActive || !ctx.Plugin.Ipc.IsGlamourerActive) {
+			dbg("Penumbra or Glamourer not active.");
+			return;
+		}
 
 		dbg("Deserialization complete. Checking actors.");
 
@@ -65,6 +70,16 @@ public class LazySceneManager {
 				primary = actor;
 				continue;
 			}
+			if(actor is IDeletable del) {
+				/*
+				TODO 7.2 temporary fix
+				Purging the pre-spawned secondary actors seems to resolve the stability issues
+				Not ideal, since this doesn't allow building a scene from other scenes
+				 */
+				dbg($"Purging pre-existing actor: {actor.Name}");
+				del.Delete();
+				continue;
+			}
 			// check if actor is in scene data, if so append to actorPrespawnedMap
 			if(ls.ActorOffsetFile.Actors.Any(x => x.Name == actor.Name)) {
 				dbg($"Added prespawned actor: {actor.Name}");
@@ -76,8 +91,6 @@ public class LazySceneManager {
 			dbg("Failed to find primary actor.");
 			return;
 		}
-
-		// TODO future "clear current scene and load" feature here
 
 		// Spawn additional actors
 		List<string> spawnedNames = [];
@@ -105,7 +118,7 @@ public class LazySceneManager {
 		}
 
 		// Pre-emptive waiting for skeletons to be ready
-		Task.Delay(500).Wait();
+		Task.Delay(750).Wait();
 		
 		// merge dicts
 		foreach(var n in spawned)
@@ -127,8 +140,13 @@ public class LazySceneManager {
 			dbg("Waiting for skelly");
 			var wait = await WaitForSkelly(pspawn.Value.Pose);
 
-			dbg($"Setting pose for {pspawn.Key}");
-			await ctx.Posing.ApplyPoseFile(pspawn.Value.Pose, pfl.Pose, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Scale | PoseTransforms.Position | PoseTransforms.PositionRoot);
+			if(wait) {
+				dbg($"Setting pose for {pspawn.Key}");
+				await ctx.Posing.ApplyPoseFile(pspawn.Value.Pose, pfl.Pose, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Scale | PoseTransforms.Position | PoseTransforms.PositionRoot);
+			}
+			else {
+				dbg($"Skeleton timeout: Failed to set pose for actor {pspawn.Key}");
+			}
 			
 		}
 
@@ -137,11 +155,13 @@ public class LazySceneManager {
 		ctx.LazyExtras.actors.aof = ls.ActorOffsetFile;
 		ctx.LazyExtras.actors.LoadScene(true);
 	}
-	/*
-	 TODO
-	this cursed abomination is just a workaround for not wanting to redraw actors
-	 */
 	private async Task<bool> WaitForSkelly(EntityPose pose) {
+		/*
+		This cursed abomination is a workaround to avoid redrawing actors,
+		as this would move their root node back to spawn origin.
+
+		I have yet to see it need to wait more than 500ms.
+		*/
 		var startAt = DateTime.Now;
 		while(GetSkelly(pose)) {
 			if ((DateTime.Now - startAt).TotalSeconds > 3) {

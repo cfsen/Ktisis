@@ -24,8 +24,6 @@ class LightsWidget :ILazyWidget {
 	private LazyUi lui;
 	private LazyUiSizes uis;
 	
-	bool dialogOpen = false;
-
 	public LightsWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.Light;
 		this.SupportsToolbelt = false;

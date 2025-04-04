@@ -33,8 +33,8 @@ public class LazyPoseLerp {
 	private PoseContainer? target;
 	private EntityPoseConverter? epc;
 	private List<string> lerpTargets;
-	private WorldTransformData wtd_origin;
-	private WorldTransformData wtd_target;
+	//private WorldTransformData wtd_origin;
+	//private WorldTransformData wtd_target;
 	
 	public float lerpFactor = 0.0f;
 
@@ -43,8 +43,8 @@ public class LazyPoseLerp {
 	public LazyPoseLerp(IEditorContext ctx) { 
 		this.ctx = ctx;
 		this.lerpTargets = [];
-		wtd_origin = new WorldTransformData();
-		wtd_target = new WorldTransformData();
+		//wtd_origin = new WorldTransformData();
+		//wtd_target = new WorldTransformData();
 	}
 	public void SetupLerp(ActorEntity? ae, string poseDataJson) {
 		if(ae == null) return;
@@ -93,17 +93,19 @@ public class LazyPoseLerp {
 				pbiHead.Add(p);
 		}
 
-		// Load the head of the target pose up, and restore neck and face to origin
-		epc.LoadBones(target, pbiHead, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
-		List<PartialBoneInfo> restore = new List<PartialBoneInfo>();
-		restore.Add(pbiHead.Where(x => x.Name == "j_kubi").First());
-		epc.LoadBones(origin, restore, PoseTransforms.Position);
-		restore.Add(pbiHead.Where(x => x.Name == "j_kao").First());
-		epc.LoadBones(origin, restore, PoseTransforms.Rotation);
-		target = epc.Save();
+		ctx.LazyExtras.fw.RunOnFrameworkThread( () => { 
+			// Load the head of the target pose up, and restore neck and face to origin
+			epc.LoadBones(target, pbiHead, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
+			List<PartialBoneInfo> restore = new List<PartialBoneInfo>();
+			restore.Add(pbiHead.Where(x => x.Name == "j_kubi").First());
+			epc.LoadBones(origin, restore, PoseTransforms.Position);
+			restore.Add(pbiHead.Where(x => x.Name == "j_kao").First());
+			epc.LoadBones(origin, restore, PoseTransforms.Rotation);
+			target = epc.Save();
 
-		// now load origin back up
-		epc!.Load(origin, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
+			// now load origin back up
+			epc!.Load(origin, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
+		});
 	
 		foreach (var x in pbiHead) {
 			lerpTargets.Add(x.Name);
@@ -138,7 +140,9 @@ public class LazyPoseLerp {
 			between[trg].Scale		= Vector3.Lerp(origin[trg].Scale, target![trg].Scale, boneLerpFactor);
 		}
 
-		epc!.Load(between!, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
+		ctx.LazyExtras.fw.RunOnFrameworkThread(() => {
+			epc!.Load(between!, PoseMode.All, PoseTransforms.Rotation | PoseTransforms.Position | PoseTransforms.Scale);
+		});
 	}
 
 	private bool CanLerp() {

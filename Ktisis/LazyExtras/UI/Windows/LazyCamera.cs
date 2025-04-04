@@ -36,10 +36,10 @@ public class LazyCamera :KtisisWindow {
 	private Vector3 _vel = Vector3.Zero;
 	private float _gizmoSensitivity = 10.0f;
 
-	private float _dLastDt = 0.0f;
-	private float _dLowDt = float.MaxValue;
-	private float _dHighDt = float.MinValue;
-	private float _dAvgDt = 0.0f;
+	//private float _dLastDt = 0.0f;
+	//private float _dLowDt = float.MaxValue;
+	//private float _dHighDt = float.MinValue;
+	//private float _dAvgDt = 0.0f;
 
 	public LazyCamera(
 		IEditorContext ctx,

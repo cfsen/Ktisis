@@ -20,7 +20,7 @@ class SceneWidget :ILazyWidget {
 	private IEditorContext ctx;
 	private LazyUi lui;
 	private LazyUiSizes uis;
-	private bool dialogOpen;
+	//private bool dialogOpen;
 
 	public SceneWidget(IEditorContext ctx) {
 		this.Category = LazyWidgetCat.Scene;
@@ -36,8 +36,8 @@ class SceneWidget :ILazyWidget {
 		this.uis.RefreshScale();
 	}
 	public void Draw() {
-		if(dialogOpen)
-			ctx.LazyExtras.io.DrawDialog();
+		//if(dialogOpen)
+		//	ctx.LazyExtras.io.DrawDialog();
 		ImGui.BeginGroup();
 		lui.DrawHeader(FontAwesomeIcon.Ad, "Scene");
 		

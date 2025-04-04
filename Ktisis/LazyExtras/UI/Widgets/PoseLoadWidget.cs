@@ -182,19 +182,21 @@ class PoseLoadWidget :ILazyWidget {
 
 		OnClickApplyBtn();
 	}
-	private void OnClickApplyBtn() {
+	private async void OnClickApplyBtn() {
 		if(ctx.LazyExtras.SelectedActor?.Pose == null) return;
 		if(loadedPose == null) return;
 
-		ctx.Posing.ApplyPoseFile(
-			ctx.LazyExtras.SelectedActor.Pose,
-			loadedPose,
-			ctx.Config.File.ImportPoseModes,
-			ctx.Config.File.ImportPoseTransforms,
-			selectedBones > 0 ? true : false,
-			ctx.Config.File.AnchorPoseSelectedBones,
-			ctx.Config.File.AnchorPoseSelectedBonesRotate
-			);
+		await ctx.LazyExtras.fw.RunOnFrameworkThread( () => { 
+			ctx.Posing.ApplyPoseFile(
+				ctx.LazyExtras.SelectedActor.Pose,
+				loadedPose,
+				ctx.Config.File.ImportPoseModes,
+				ctx.Config.File.ImportPoseTransforms,
+				selectedBones > 0 ? true : false,
+				ctx.Config.File.AnchorPoseSelectedBones,
+				ctx.Config.File.AnchorPoseSelectedBonesRotate
+			); 
+		});
 	}
 	private void dbg(string s) => Ktisis.Log.Debug($"PoseLoadWidget: {s}");
 }

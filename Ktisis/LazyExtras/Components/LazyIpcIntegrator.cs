@@ -45,12 +45,12 @@ public class LazyIpcIntegrator : IDisposable {
 	// Manipulators
 
 	public async Task SpawnFavorite(LazyIpcFavorite lif, bool bypassFavorites = false) {
-		var entity = await ctx.Scene.GetModule<ActorModule>().Spawn();
+		var entity = await ctx.Scene.Factory.CreateActor().Spawn();
 		entity.Name = lif.Name;
 		ApplyAssociatedDesign(lif, bypassFavorites);
 	}
 	public async Task<ActorEntity> SpawnImportFavorite(LazyIpcFavorite lif, bool bypassFavorites = false) {
-		var entity = await ctx.Scene.GetModule<ActorModule>().Spawn();
+		var entity = await ctx.Scene.Factory.CreateActor().Spawn();
 		entity.Name = lif.Name;
 		ApplyAssociatedDesign(lif, bypassFavorites);
 		return entity;
@@ -72,14 +72,30 @@ public class LazyIpcIntegrator : IDisposable {
 		}
 
 		if(fav.PenumbraCollection != null) {
-			var resetCol = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, null);
-			if(resetCol.Item1 == Penumbra.Api.Enums.PenumbraApiEc.Success)
-				dbg("Reset collection.");
-			var pRes = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, fav.PenumbraCollection);
-			if(pRes.Item1 == Penumbra.Api.Enums.PenumbraApiEc.Success)
-				dbg("Assigned new collection");
+			// TODO
+			// maybe the crash is related to forcibly assigning the same collection over and over?
+			// doesnt seem like it
+			//var current = ipc.GetPenumbraIpc().GetCollectionForObject(ae.Actor);
+			//if(current.objectValid && current.effectiveCollection.Id != fav.PenumbraCollection) { // UNTESTED
+
+				var resetCol = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, null);
+				if(resetCol.Item1 == Penumbra.Api.Enums.PenumbraApiEc.Success)
+					dbg("Reset collection.");
+				var pRes = ipc.GetPenumbraIpc().SetCollectionForObject(ae.Actor.ObjectIndex, fav.PenumbraCollection);
+				if(pRes.Item1 == Penumbra.Api.Enums.PenumbraApiEc.Success)
+					dbg("Assigned new collection");
+
+			//}
+			//else
+			//{
+			//	dbg("Object invalid, or collection already set.");
+			//}
+
 			//dbg(pRes.ToString());
 		}
+		else 
+			dbg("No penumbra collection associatied.");
+
 		if(fav.GlamourerState != null) {
 			var gRes = ipc.GetGlamourerIpc().ApplyState(fav.GlamourerState, ae.Actor.ObjectIndex);
 			if(gRes == Glamourer.Api.Enums.GlamourerApiEc.Success)
@@ -154,6 +170,7 @@ public class LazyIpcIntegrator : IDisposable {
 	}
 	private bool ActorRemove(string name) {
 		var target = favorites.Actors.Where(x => x.Name == name).FirstOrDefault();
+		if(target == null) return false;
 		return favorites.Actors.Remove(target);
 	}
 	public void DeduplicateFav() {
