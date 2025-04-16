@@ -109,6 +109,14 @@ public sealed class IkModule : HookModule {
 	// Solving
 
 	private void UpdateIkPoses() {
+		/* 
+		 * TODO 7.2
+		 * temporarily disabling IK to improve stability
+		 * there's nothing wrong with this code path by itself, 
+		 * but it has been triggering accessviolations since 7.2/migration to dotnet9
+		 * re-enable once the root cause is sorted out
+		 */
+		return;
 		if (!this.Manager.IsValid) return;
 
 		IEnumerable<IIkController> controllers;
