@@ -52,6 +52,11 @@ public class LazySceneManager {
 			return;
 		}
 
+		
+		dbg("Setting LazyBase.SelectedActor to null.");
+		// Ensure that widgets won't try to access actors while the list is being manipulated
+		ctx.LazyExtras.SelectedActor = null;
+
 		dbg("Deserialization complete. Checking actors.");
 
 		var actors = ctx.Scene.Recurse().OfType<ActorEntity>().ToList();
@@ -73,8 +78,10 @@ public class LazySceneManager {
 			if(actor is IDeletable del) {
 				/*
 				TODO 7.2 temporary fix
-				Purging the pre-spawned secondary actors seems to resolve the stability issues
+				Purging the pre-spawned secondary actors seems to improve stability issues
 				Not ideal, since this doesn't allow building a scene from other scenes
+				this was not neccessary before 7.2, 
+				should be disabled/made an option once the actual cause of accessviolations is found
 				 */
 				dbg($"Purging pre-existing actor: {actor.Name}");
 				del.Delete();
@@ -99,6 +106,7 @@ public class LazySceneManager {
 			if(!actorPrespawnedMap.ContainsKey(unspawned.Name) && unspawned.Name != primary.Name) {
 				// Designs are applied by LIPC
 				var ae = await ctx.LazyExtras.ipc.SpawnImportFavorite(unspawned, true);
+				Task.Delay(500).Wait(); // TODO debugging
 				dbg($"Spawning: {unspawned.Name}"); 
 				spawnedNames.Add(unspawned.Name);
 				spawned.Add(unspawned.Name, ae);
@@ -115,6 +123,7 @@ public class LazySceneManager {
 			dbg($"Setting customization for {pspawn.Key}");
 			var design = ls.Actors.First(x => x.Name == pspawn.Key);
 			ctx.LazyExtras.ipc.ApplyAssociatedDesign(design, true);
+			Task.Delay(500).Wait(); // TODO debugging
 		}
 
 		// Pre-emptive waiting for skeletons to be ready
