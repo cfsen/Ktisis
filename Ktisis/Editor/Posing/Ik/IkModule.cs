@@ -116,7 +116,7 @@ public sealed class IkModule : HookModule {
 		 * but it has been triggering accessviolations since 7.2/migration to dotnet9
 		 * re-enable once the root cause is sorted out
 		 */
-		return;
+		//return;
 		if (!this.Manager.IsValid) return;
 
 		IEnumerable<IIkController> controllers;
