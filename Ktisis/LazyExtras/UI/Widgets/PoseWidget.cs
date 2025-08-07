@@ -7,6 +7,7 @@ using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;
 
 using System.Numerics;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace Ktisis.LazyExtras.UI.Widgets
 {
@@ -50,8 +51,10 @@ namespace Ktisis.LazyExtras.UI.Widgets
 
 				// TODO move this somewhere else
 				//ImGui.Text("Misc");
-				//if (ImGui.Button("Set reference pose") && ctx.LazyExtras.SelectedActor != null)
-				//	ctx.LazyExtras.pose.SetPartialReference();
+				if(lui.BtnIcon(FontAwesomeIcon.SquarePersonConfined, "WDG_SetPartialReference", uis.BtnSmall, "Set partial reference pose"))
+					ctx.LazyExtras.pose.SetPartialReference();
+
+				//DrawPoseMirrorControls();
 
 			}
 
@@ -59,6 +62,10 @@ namespace Ktisis.LazyExtras.UI.Widgets
 			ImGui.EndGroup();
 		}
 
+		private void DrawPoseMirrorControls() {
+			if (lui.BtnIcon(FontAwesomeIcon.ArrowsLeftRight, "WDG_PoseMirror", uis.BtnSmall, "Gesture overlay"))
+				ctx.LazyExtras.pose.mirror.Flip();
+		}
 		private void DrawOverlayControls() {
 			ImGui.Text("Bone overlay");
 			if (lui.BtnIcon(FontAwesomeIcon.PersonFalling, "WDG_PoseGestureOverlay", uis.BtnSmall, "Gesture overlay"))
