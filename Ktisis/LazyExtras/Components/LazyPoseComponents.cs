@@ -23,13 +23,13 @@ using Ktisis.LazyExtras.Helpers;
 
 namespace Ktisis.LazyExtras.Components;
 public class LazyPoseComponents {
-	private IEditorContext ctx;
 	public LazyPoseLerp lerp;
+	public LazyPoseMirrorComponents mirror;
 
+	private IEditorContext ctx;
 	private LazyMaths mathx;
 
 	public Vector3 TargetLookPosition = Vector3.Zero;
-
 	public float GazeFocalPointScalar = 0.0f;
 
 	public LazyPoseComponents(IEditorContext _ctx, LazyMaths _math) {
@@ -37,6 +37,7 @@ public class LazyPoseComponents {
 
 		this.mathx = _math;
 		this.lerp = new(ctx);
+		this.mirror = new(ctx);
 	}
 
 	// Gaze control
