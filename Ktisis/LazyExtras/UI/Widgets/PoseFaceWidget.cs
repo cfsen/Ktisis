@@ -2,7 +2,7 @@
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Data.Config.Pose2D;
 using Ktisis.Data.Serialization;

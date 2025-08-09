@@ -4,7 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.LazyExtras.UI.Widgets;
 

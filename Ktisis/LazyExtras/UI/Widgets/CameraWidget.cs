@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 using GLib.Widgets;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Common.Utility;
 using Ktisis.Editor.Camera.Types;

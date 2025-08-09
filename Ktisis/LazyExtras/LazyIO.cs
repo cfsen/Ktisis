@@ -4,7 +4,7 @@ using Dalamud.Plugin;
 
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Common.Extensions;
 using Ktisis.Core.Attributes;

@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.LazyExtras.Interfaces;

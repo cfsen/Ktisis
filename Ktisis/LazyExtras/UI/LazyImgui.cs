@@ -4,7 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.Interface.Types;

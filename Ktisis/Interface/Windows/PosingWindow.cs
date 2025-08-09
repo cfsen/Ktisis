@@ -50,7 +50,7 @@ public class PosingWindow : KtisisWindow {
 	}
 
 	public override void OnOpen() {
-		this._schema = SchemaReader.ReadPoseView();
+		this.Schema = SchemaReader.ReadPoseView();
 	}
 	
 	public override void PreOpenCheck() {
@@ -161,8 +161,8 @@ public class PosingWindow : KtisisWindow {
 		ImGui.Text("View:");
 		
 		foreach (var value in Enum.GetValues<ViewEnum>()) {
-			if (ImGui.RadioButton(value.ToString(), this._view == value))
-				this._view = value;
+			if (ImGui.RadioButton(value.ToString(), this.View == value))
+				this.View = value;
 		}
 	}
 
@@ -183,7 +183,7 @@ public class PosingWindow : KtisisWindow {
 
 		var frame = this._render.StartFrame();
 		
-		switch (this._view) {
+		switch (this.View) {
 			case ViewEnum.Body:
 				this.DrawView(frame, "Body", 0.35f);
 				ImGui.SameLine();
@@ -235,9 +235,9 @@ public class PosingWindow : KtisisWindow {
 		float height = 1.0f,
 		IDictionary<string, string>? template = null
 	) {
-		if (this._schema == null) return;
+		if (this.Schema == null) return;
 
-		if (!this._schema.Views.TryGetValue(name, out var view))
+		if (!this.Schema.Views.TryGetValue(name, out var view))
 			return;
 
 		frame.DrawView(view, width, height, template);

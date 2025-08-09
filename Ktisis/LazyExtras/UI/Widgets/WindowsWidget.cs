@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.Interface.Windows;

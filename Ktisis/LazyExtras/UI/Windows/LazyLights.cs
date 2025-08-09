@@ -5,7 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 
 using GLib.Widgets;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Editor.Context.Types;
 using Ktisis.Interface.Types;

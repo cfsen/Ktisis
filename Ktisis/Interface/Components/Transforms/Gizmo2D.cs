@@ -72,7 +72,7 @@ public class Gizmo2D {
 		DrawGizmoCircle(drawPos, drawSize, drawSize.X);
 	}
 	
-	private static void DrawGizmoCircle(Vector2 pos, Vector2 size, float width) {
+	private void DrawGizmoCircle(Vector2 pos, Vector2 size, float width) {
 		ImGui.GetWindowDrawList().AddCircleFilled(pos + size / 2, (width * ScaleFactor) / 2.05f, 0xCF202020);
 	}
 

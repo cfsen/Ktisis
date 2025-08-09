@@ -2,7 +2,7 @@
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Colors;
 
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 using Ktisis.Common.Extensions;
 using Ktisis.Editor.Context.Types;

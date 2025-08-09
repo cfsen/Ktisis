@@ -56,6 +56,8 @@ public class EditorInterface : IEditorInterface {
 	}
 
 	private void OnSelectChanged(ISelectManager sender) {
+		// stop object window from opening
+		return;
 		if (!this._ctx.Config.Editor.ToggleEditorOnSelect) return;
 
 		var open = sender.Count > 0;
@@ -102,7 +104,7 @@ public class EditorInterface : IEditorInterface {
 	}
 	public void ToggleTransformWindow() {
 		var gizmo = this._gizmo.Create(GizmoId.TransformEditor);
-		this._gui.GetOrCreate<TransformWindow>(this._ctx, new Gizmo2D(gizmo)).Toggle();
+		this._gui.GetOrCreate<ObjectWindow>(this._ctx, new Gizmo2D(gizmo)).Toggle();
 	}
 
 	public void OpenPosingWindow() => this._gui.GetOrCreate<PosingWindow>(this._ctx, this._ctx.Locale).Open();
@@ -220,4 +222,9 @@ public class EditorInterface : IEditorInterface {
 		this._gui.GetOrCreate<LazyCamera>(this._ctx, this._gui, new Gizmo2D(gizmo, true, 0.8f)).Toggle();
 	}
 	public void ToggleLazyLights() => this._gui.GetOrCreate<LazyLight>(this._ctx).Toggle();
+
+	public void OpenTransformWindow() {
+		var gizmo = this._gizmo.Create(GizmoId.TransformEditor);
+		this._gui.GetOrCreate<ObjectWindow>(this._ctx, new Gizmo2D(gizmo)).Open();
+	}
 }
